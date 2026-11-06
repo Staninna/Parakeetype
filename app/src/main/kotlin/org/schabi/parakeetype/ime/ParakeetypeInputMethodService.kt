@@ -27,6 +27,7 @@ import org.schabi.parakeetype.settings.model.ModelStorageManager
 import org.schabi.parakeetype.settings.preferences.AppPreferences
 import org.schabi.parakeetype.ui.keyboard.ImeComposeView
 import org.schabi.parakeetype.ui.keyboard.KeyboardScreen
+import org.schabi.parakeetype.ui.keyboard.KeyboardUiState
 import org.schabi.parakeetype.ui.keyboard.KeyboardViewModel
 import org.schabi.parakeetype.ui.theme.ParakeetypeKeyboardTheme
 import kotlinx.coroutines.Dispatchers
@@ -205,6 +206,20 @@ class ParakeetypeInputMethodService :
         bindService(inferenceServiceIntent(), inferenceServiceConnection, BIND_AUTO_CREATE)
         isBound = true
         Log.d(TAG, "InferenceService bind requested")
+
+        // Keep the screen on while listening or transcribing, so the screen timeout cannot
+        // lock the phone in the middle of a long dictation.
+        lifecycleScope.launch {
+            keyboardViewModel.uiState.collect { state ->
+                val keepOn = state is KeyboardUiState.Listening ||
+                        state is KeyboardUiState.Processing ||
+                        state is KeyboardUiState.Transcribing
+                window?.window?.also { win ->
+                    if (keepOn) win.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    else win.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            }
+        }
 
         // The word-suggestion feature was removed; free the language packs it may have
         // downloaded into internal storage on earlier versions. Parakeet-V3 was replaced by

@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -110,6 +111,9 @@ class VoiceInputActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The sheet is only open while listening: keep the screen on so a long dictation is
+        // not cut off by the screen timeout.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         inference = InferenceConnection(this).also { it.bind() }
         val prompt = intent.getStringExtra(RecognizerIntent.EXTRA_PROMPT)
 

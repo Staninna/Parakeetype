@@ -369,6 +369,8 @@ class BubbleAccessibilityService : AccessibilityService() {
         ui.resetLevels()
         ui.modelLoading = false
         ui.phase = BubblePhase.Listening
+        // Long dictations must not be cut off by the screen timeout locking the phone.
+        view?.keepScreenOn = true
         session = RecognitionSession(
             audioContext = this,
             inference = inference,
@@ -392,6 +394,7 @@ class BubbleAccessibilityService : AccessibilityService() {
     }
 
     private fun endSession() {
+        view?.keepScreenOn = false
         session = null
         target = null
         ui.phase = BubblePhase.Idle
