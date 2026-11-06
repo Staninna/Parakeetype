@@ -28,6 +28,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Redo
+import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Mic
@@ -53,6 +56,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import org.schabi.parakeetype.R
 
@@ -70,6 +74,13 @@ class BubbleUiState {
 
     /** The bubble sits at the right screen edge (expands leftwards) or the left one. */
     var dockedRight by mutableStateOf(true)
+
+    /** The focused field has a bubble insertion to undo / an undone one to redo. */
+    var canUndo by mutableStateOf(false)
+    var canRedo by mutableStateOf(false)
+
+    /** There is a last transcript to insert again. */
+    var canReinsert by mutableStateOf(false)
 
     /** Recent microphone levels, oldest first, each 0..1. */
     val levels = mutableStateListOf<Float>().apply { repeat(BAR_COUNT) { add(0f) } }
@@ -90,7 +101,9 @@ val BUBBLE_SIZE = 56.dp
 
 /**
  * The overlay content: a round microphone button while idle, which grows into a recording pill
- * (cancel · live waveform · done) while dictating.
+ * (cancel · live waveform · done) while dictating. While idle, small floating buttons beside the
+ * microphone (on the screen side, away from the edge) undo / redo the bubble's last insertion
+ * and insert the last transcript again — each only while it can do something.
  */
 @Composable
 fun BubbleContent(
@@ -98,6 +111,9 @@ fun BubbleContent(
     onStart: () -> Unit,
     onFinish: () -> Unit,
     onCancel: () -> Unit,
+    onUndo: () -> Unit = {},
+    onRedo: () -> Unit = {},
+    onReinsert: () -> Unit = {},
 ) {
     Box(Modifier.padding(BUBBLE_WINDOW_PADDING)) {
         AnimatedContent(
@@ -115,13 +131,83 @@ fun BubbleContent(
             label = "bubble",
         ) { idle ->
             if (idle) {
-                MicButton(onStart = onStart)
+                IdleBubble(state, onStart, onUndo, onRedo, onReinsert)
             } else {
                 RecordingPill(state = state, onFinish = onFinish, onCancel = onCancel)
             }
         }
     }
 }
+
+@Composable
+private fun IdleBubble(
+    state: BubbleUiState,
+    onStart: () -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    onReinsert: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Absolute.spacedBy(8.dp),
+    ) {
+        // The microphone stays at the docked edge; the buttons go on the screen side, in the
+        // order undo · redo · re-insert counted from the microphone outwards.
+        if (state.dockedRight) {
+            ActionBubbles(state, onUndo, onRedo, onReinsert, outwardsToLeft = true)
+            MicButton(onStart = onStart)
+        } else {
+            MicButton(onStart = onStart)
+            ActionBubbles(state, onUndo, onRedo, onReinsert, outwardsToLeft = false)
+        }
+    }
+}
+
+@Composable
+private fun ActionBubbles(
+    state: BubbleUiState,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    onReinsert: () -> Unit,
+    outwardsToLeft: Boolean,
+) {
+    val undo = stringResource(R.string.cd_undo_dictation)
+    val redo = stringResource(R.string.cd_redo_dictation)
+    val reinsert = stringResource(R.string.cd_reinsert_transcript)
+    if (outwardsToLeft) {
+        if (state.canReinsert) ActionBubble(Icons.Rounded.History, reinsert, onReinsert)
+        if (state.canRedo) ActionBubble(Icons.AutoMirrored.Rounded.Redo, redo, onRedo)
+        if (state.canUndo) ActionBubble(Icons.AutoMirrored.Rounded.Undo, undo, onUndo)
+    } else {
+        if (state.canUndo) ActionBubble(Icons.AutoMirrored.Rounded.Undo, undo, onUndo)
+        if (state.canRedo) ActionBubble(Icons.AutoMirrored.Rounded.Redo, redo, onRedo)
+        if (state.canReinsert) ActionBubble(Icons.Rounded.History, reinsert, onReinsert)
+    }
+}
+
+/** A small floating round button next to the microphone bubble. */
+@Composable
+private fun ActionBubble(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shadowElevation = 4.dp,
+        modifier = Modifier.size(ACTION_BUBBLE_SIZE),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClickLabel = label, onClick = onClick)
+                .semantics { contentDescription = label },
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+private val ACTION_BUBBLE_SIZE = 42.dp
 
 @Composable
 private fun MicButton(onStart: () -> Unit) {

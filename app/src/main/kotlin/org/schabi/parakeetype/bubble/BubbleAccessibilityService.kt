@@ -92,6 +92,16 @@ class BubbleAccessibilityService : AccessibilityService() {
     /** The field dictation started in; utterances go here even if focus moves meanwhile. */
     private var target: AccessibilityNodeInfo? = null
 
+    /** Undo / redo of the bubble's insertions into [historyField]. */
+    private val history = EditHistory()
+    private var historyField: AccessibilityNodeInfo? = null
+
+    /** The text of the last dictation session, for re-insertion (memory only). */
+    private var lastTranscript: String? = null
+
+    /** What the running dictation session inserted so far. */
+    private val sessionTranscript = StringBuilder()
+
     /** Top edge of the visible keyboard in screen pixels, or `null` when none is seen. */
     private var keyboardTop: Int? = null
 
@@ -147,7 +157,16 @@ class BubbleAccessibilityService : AccessibilityService() {
         // Show on any focused field, also when no keyboard is up (e.g. after Back dismissed it);
         // without a keyboard the bubble sits at its remembered free height.
         val show = field != null && !keyboard.isOwn
+        updateActions(field)
         if (show) showBubble() else hideBubble()
+    }
+
+    /** Shows undo / redo only for the field the history belongs to, re-insert for any field. */
+    private fun updateActions(field: AccessibilityNodeInfo?) {
+        val own = field != null && field == historyField
+        ui.canUndo = own && history.canUndo
+        ui.canRedo = own && history.canRedo
+        ui.canReinsert = field != null && lastTranscript != null
     }
 
     private class Keyboard(val top: Int?, val isOwn: Boolean)
@@ -200,6 +219,9 @@ class BubbleAccessibilityService : AccessibilityService() {
                         onStart = ::startDictation,
                         onFinish = ::finishDictation,
                         onCancel = ::cancelDictation,
+                        onUndo = ::undo,
+                        onRedo = ::redo,
+                        onReinsert = ::reinsert,
                     )
                 }
             }.also {
@@ -361,6 +383,7 @@ class BubbleAccessibilityService : AccessibilityService() {
             return
         }
         target = field
+        sessionTranscript.clear()
         // Hold the microphone foreground-service state while dictating from the bubble (see
         // InferenceService.keepLoadedServiceTypes).
         if (keepModelLoaded) InferenceService.startKeepLoaded(this)
@@ -394,6 +417,8 @@ class BubbleAccessibilityService : AccessibilityService() {
     }
 
     private fun endSession() {
+        if (sessionTranscript.isNotEmpty()) lastTranscript = sessionTranscript.toString()
+        sessionTranscript.clear()
         view?.keepScreenOn = false
         session = null
         target = null
@@ -448,7 +473,11 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (transcript.isBlank()) return
         // Never switch to whatever field has focus now: that could be another chat.
         val node = target?.takeIf { it.refresh() }
-        if (node != null && (setText(node, transcript) || paste(node, transcript))) return
+        if (node != null && (setText(node, transcript) || paste(node, transcript))) {
+            if (sessionTranscript.isNotEmpty()) sessionTranscript.append(' ')
+            sessionTranscript.append(transcript.trim())
+            return
+        }
         // The field takes neither direct insertion nor paste. Copy this segment and stop the
         // session: a later segment would replace the clipboard and lose this sentence.
         copyToClipboard(transcript.trim())
@@ -479,17 +508,95 @@ class BubbleAccessibilityService : AccessibilityService() {
     private fun setText(node: AccessibilityNodeInfo, transcript: String): Boolean {
         if (!node.actionList.contains(AccessibilityAction.ACTION_SET_TEXT)) return false
         val current: CharSequence = fieldText(node)
-        val splice = spliceTranscript(current, node.textSelectionStart, node.textSelectionEnd, transcript)
+        val selStart = node.textSelectionStart
+        val selEnd = node.textSelectionEnd
+        val splice = spliceTranscript(current, selStart, selEnd, transcript)
+        if (!writeField(node, splice.text, splice.cursor)) return false
+        recordEdit(node, current.toString(), if (selStart >= 0 && selEnd >= 0) minOf(selStart, selEnd) else -1, splice.text, splice.cursor)
+        return true
+    }
+
+    /** Replaces the field's whole text with [text] and puts the cursor at [cursor]. */
+    private fun writeField(node: AccessibilityNodeInfo, text: String, cursor: Int): Boolean {
         val textArgs = Bundle().apply {
-            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, splice.text)
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
         if (!node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, textArgs)) return false
         val selectionArgs = Bundle().apply {
-            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, splice.cursor)
-            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, splice.cursor)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, cursor)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, cursor)
         }
         node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selectionArgs)
         return true
+    }
+
+    /**
+     * Records an insertion for undo. The text after it is read back from the field (apps may
+     * reformat what they get), falling back to what was written when the read-back fails or
+     * still shows the old text.
+     */
+    private fun recordEdit(node: AccessibilityNodeInfo, before: String, selStart: Int, written: String, cursor: Int) {
+        if (node != historyField) {
+            history.clear()
+            historyField = node
+        }
+        val after = (if (node.refresh()) fieldText(node).toString() else null)
+            ?.takeIf { it != before && it.isNotEmpty() } ?: written
+        val beforeCursor = selStart.takeIf { it in 0..before.length } ?: before.length
+        history.record(FieldEdit(before, beforeCursor, after, cursor.coerceIn(0, after.length)))
+    }
+
+    // ── Undo / redo / re-insert ───────────────────────────────────────────────────────────────
+
+    /** The focused field, if it is the one the history belongs to. */
+    private fun historyTarget(): AccessibilityNodeInfo? {
+        val field = findEditableFocus() ?: return null
+        return field.takeIf { it == historyField }
+    }
+
+    private fun undo() {
+        if (session != null) return
+        val node = historyTarget()
+        val edit = node?.let { history.undo(fieldText(it).toString()) }
+        if (node == null || edit == null || !writeField(node, edit.before, edit.beforeCursor)) {
+            // The field changed since (or refused): leave it alone.
+            history.clear()
+            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+        } else {
+            view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        }
+        updateActions(findEditableFocus())
+    }
+
+    private fun redo() {
+        if (session != null) return
+        val node = historyTarget()
+        val edit = node?.let { history.redo(fieldText(it).toString()) }
+        if (node == null || edit == null || !writeField(node, edit.after, edit.afterCursor)) {
+            history.clear()
+            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+        } else {
+            view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        }
+        updateActions(findEditableFocus())
+    }
+
+    /** Inserts the last transcript again at the cursor of the focused field. */
+    private fun reinsert() {
+        if (session != null) return
+        val text = lastTranscript ?: return
+        val node = findEditableFocus()
+        if (node == null) {
+            toast(R.string.bubble_no_field)
+            return
+        }
+        if (setText(node, text) || paste(node, text)) {
+            view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        } else {
+            copyToClipboard(text)
+            toast(R.string.bubble_copied)
+        }
+        updateActions(node)
     }
 
     /** Pastes [transcript] at the cursor through the clipboard. `false` if the field refused. */
