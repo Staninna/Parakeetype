@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Späť</string>
     <string name="cd_switch_keyboard">Prepnúť klávesnicu</string>
+    <string name="cd_undo_dictation">Vrátiť posledný diktát</string>
+    <string name="cd_reinsert_transcript">Znova vložiť posledný diktát</string>
     <string name="cd_delete_all">Odstrániť celý text</string>
     <string name="cd_delete_word">Odstrániť posledné slovo</string>
     <string name="cd_action_search">Hľadať</string>

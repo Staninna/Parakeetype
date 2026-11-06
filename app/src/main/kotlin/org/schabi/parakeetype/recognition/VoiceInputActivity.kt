@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -196,6 +197,11 @@ class VoiceInputActivity : ComponentActivity() {
 
         override fun onEndOfSpeech() {
             if (uiState is VoiceInputUiState.Listening) uiState = VoiceInputUiState.Transcribing
+        }
+
+        // Stopped on its own after the user stopped speaking: confirm it with a haptic tick.
+        override fun onEndpointed() {
+            window.decorView.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
         override fun onResult(text: String, confidence: Float, words: List<WordTiming>) {

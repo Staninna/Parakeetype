@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Atpakaļ</string>
     <string name="cd_switch_keyboard">Pārslēgt tastatūru</string>
+    <string name="cd_undo_dictation">Atsaukt pēdējo diktēšanu</string>
+    <string name="cd_reinsert_transcript">Atkārtoti ievietot pēdējo diktēšanu</string>
     <string name="cd_delete_all">Dzēst visu tekstu</string>
     <string name="cd_delete_word">Dzēst pēdējo vārdu</string>
     <string name="cd_action_search">Meklēt</string>

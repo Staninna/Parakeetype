@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Atgal</string>
     <string name="cd_switch_keyboard">Perjungti klaviatūrą</string>
+    <string name="cd_undo_dictation">Anuliuoti paskutinį diktavimą</string>
+    <string name="cd_reinsert_transcript">Dar kartą įterpti paskutinį diktavimą</string>
     <string name="cd_delete_all">Ištrinti visą tekstą</string>
     <string name="cd_delete_word">Ištrinti paskutinį žodį</string>
     <string name="cd_action_search">Ieškoti</string>

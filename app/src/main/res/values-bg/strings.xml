@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Назад</string>
     <string name="cd_switch_keyboard">Превключване на клавиатурата</string>
+    <string name="cd_undo_dictation">Отмяна на последната диктовка</string>
+    <string name="cd_reinsert_transcript">Повторно вмъкване на последната диктовка</string>
     <string name="cd_delete_all">Изтриване на целия текст</string>
     <string name="cd_delete_word">Изтриване на последната дума</string>
     <string name="cd_action_search">Търсене</string>

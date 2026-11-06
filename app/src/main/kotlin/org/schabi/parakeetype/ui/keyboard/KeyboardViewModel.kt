@@ -235,7 +235,63 @@ class KeyboardViewModel(
     fun setTextInjector(injector: TextInjector?) {
         textInjector = injector
         _enterAction.value = injector?.enterAction ?: EnterAction.DONE
+        _canUndo.value = injector?.canUndo == true
     }
+
+    private val _canUndo = MutableStateFlow(false)
+
+    /** `true` when the current field has a dictation that [undoDictation] can remove. */
+    val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+
+    private val _lastTranscript = MutableStateFlow<String?>(null)
+
+    /**
+     * The text of the most recent dictation session that typed something, in any field, for
+     * [reinsertLastTranscript]. Held in memory only, never persisted.
+     */
+    val lastTranscript: StateFlow<String?> = _lastTranscript.asStateFlow()
+
+    /** What the running dictation session typed so far (its utterances, trimmed). */
+    private val sessionTranscript = StringBuilder()
+
+    /** Commits [text] as the dictation's final text and remembers what it typed. */
+    private fun commitDictation(text: String) {
+        val injector = textInjector ?: return
+        val typed = injector.commitFinal(text)?.trim()
+        if (!typed.isNullOrEmpty()) {
+            if (sessionTranscript.isNotEmpty()) sessionTranscript.append(' ')
+            sessionTranscript.append(typed)
+            _lastTranscript.value = sessionTranscript.toString()
+        }
+        _canUndo.value = injector.canUndo
+    }
+
+    /** Removes what the last dictation typed into the current field (only while idle). */
+    fun undoDictation() {
+        if (_uiState.value !is KeyboardUiState.Idle) return
+        val injector = textInjector ?: return
+        injector.undoDictation()
+        _canUndo.value = injector.canUndo
+    }
+
+    /**
+     * Types the [lastTranscript] again at the cursor (only while idle) — e.g. after an app
+     * cleared the field or the text went into the wrong one. It can be undone like a dictation.
+     */
+    fun reinsertLastTranscript() {
+        if (_uiState.value !is KeyboardUiState.Idle) return
+        val text = _lastTranscript.value ?: return
+        val injector = textInjector ?: return
+        injector.insertText(text)
+        _canUndo.value = injector.canUndo
+    }
+
+    /**
+     * Set by [org.schabi.parakeetype.ime.ParakeetypeInputMethodService]: the end-of-speech
+     * detection stopped an instant-mode recording — give a short haptic confirmation, so the
+     * user knows without looking that the microphone is off.
+     */
+    var onEndOfSpeechDetected: (() -> Unit)? = null
 
     private val _isContinuousMode = MutableStateFlow(false)
 
@@ -450,6 +506,7 @@ class KeyboardViewModel(
         captureJob?.cancel()
         _uiState.value = KeyboardUiState.Listening
         _diagnostics.value = PipelineDiagnostics()
+        sessionTranscript.clear()
 
         // An instant-mode session runs without a finger on the talk button: it looks like a
         // held button and the endpointer stops it. The endpointer needs the VAD's speech
@@ -510,6 +567,7 @@ class KeyboardViewModel(
                                 ) viewModelScope.launch {
                                     if (captureJob != myJob || !instantSession) return@launch
                                     Log.d(TAG, "Instant mode - $event, stopping")
+                                    if (event == SpeechEndpointer.Event.EndOfSpeech) onEndOfSpeechDetected?.invoke()
                                     stopRecording()
                                 }
                             }
@@ -547,7 +605,7 @@ class KeyboardViewModel(
                                 TAG, "Final transcript: \"${result.text}\"" +
                                         if (result.isUtteranceBoundary) " [utterance boundary]" else ""
                             )
-                            textInjector?.commitFinal(result.text)
+                            commitDictation(result.text)
                             if (!result.isUtteranceBoundary) {
                                 _isContinuousMode.value = false
                                 // An instant-mode session stays in its stopped state until
@@ -656,7 +714,7 @@ class KeyboardViewModel(
      */
     private fun onMicBusy(switchBack: Boolean) {
         val partial = (_uiState.value as? KeyboardUiState.Processing)?.partial
-        if (!partial.isNullOrEmpty()) textInjector?.commitFinal(partial) else textInjector?.clear()
+        if (!partial.isNullOrEmpty()) commitDictation(partial) else textInjector?.clear()
         captureJob = null
         cancelInstantSession()
         _isContinuousMode.value = false
@@ -726,6 +784,8 @@ class KeyboardViewModel(
         // Always clear TextInjector state - stale committedWords would cause alignment
         // failures and potential duplication on the very next partial injection.
         textInjector?.clear()
+        // The field is empty: nothing left to undo (its undo check would fail anyway).
+        _canUndo.value = false
 
         val isActivelyRecording = _uiState.value is KeyboardUiState.Listening ||
                 _uiState.value is KeyboardUiState.Processing
@@ -768,7 +828,7 @@ class KeyboardViewModel(
         val currentState = _uiState.value
         if (currentState is KeyboardUiState.Processing && currentState.partial.isNotEmpty()) {
             // Commit the last partial transcript so no text is lost on app-switch.
-            textInjector?.commitFinal(currentState.partial)
+            commitDictation(currentState.partial)
         } else {
             // Transcribing (no partial yet) or any other state - remove any composing span
             // without committing. If the engine was still running its final pass it will be

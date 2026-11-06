@@ -13,6 +13,24 @@ import org.schabi.parakeetype.ime.TranscriptAligner.wordsMatch
 
 private const val TAG = "TextInjector"
 
+private fun isPasswordField(editorInfo: EditorInfo): Boolean {
+    val cls = editorInfo.inputType and InputType.TYPE_MASK_CLASS
+    val variation = editorInfo.inputType and InputType.TYPE_MASK_VARIATION
+    return when (cls) {
+        InputType.TYPE_CLASS_TEXT -> variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
+        InputType.TYPE_CLASS_NUMBER -> variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        else -> false
+    }
+}
+
+/** How much text before the cursor the undo history compares (fields longer than that get none). */
+private const val UNDO_WINDOW_CHARS = 10_000
+
+/** How many dictations [TextInjector.undoDictation] can remove one after another. */
+private const val MAX_UNDO_DICTATIONS = 20
+
 /**
  * How many words at the tail of the transcript remain editable (composing text).
  * Words earlier than this threshold are committed permanently so that model drift on
@@ -139,13 +157,14 @@ class TextInjector(
      */
     val supportsComposing: Boolean = run {
         val cls = editorInfo.inputType and InputType.TYPE_MASK_CLASS
-        val variation = editorInfo.inputType and InputType.TYPE_MASK_VARIATION
-        val isTextClass = cls == InputType.TYPE_CLASS_TEXT
-        val isPassword = variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
-                variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
-                variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
-        isTextClass && !isPassword
+        cls == InputType.TYPE_CLASS_TEXT && !isPasswordField(editorInfo)
     }
+
+    /**
+     * Password fields keep no undo history: what was typed there must not be held in memory
+     * (nor offered for re-insertion by the keyboard).
+     */
+    private val isPassword: Boolean = isPasswordField(editorInfo)
 
     /** Last partial text sent, used to skip no-op `setComposingText` calls. */
     private var lastPartial: String = ""
@@ -197,6 +216,19 @@ class TextInjector(
      */
     var alignmentRecoveryCount: Int = 0
         private set
+
+    /**
+     * The text before the cursor when the running dictation wrote its first text, or `null`
+     * while none runs. [commitFinal] compares it with the text before the cursor afterwards
+     * to learn exactly what the dictation typed (separator space included).
+     */
+    private var dictationAnchor: String? = null
+
+    /** What each dictation typed into this field, newest last — what [undoDictation] removes. */
+    private val dictations = ArrayDeque<String>()
+
+    /** `true` when [undoDictation] has a dictation to remove. */
+    val canUndo: Boolean get() = dictations.isNotEmpty()
 
     /**
      * Applies [displayCleanFn] to a word list joined by spaces.
@@ -275,6 +307,7 @@ class TextInjector(
      */
     fun setPartial(text: String) {
         if (!supportsComposing || text == lastPartial) return
+        if (dictationAnchor == null) dictationAnchor = readBeforeCursor()
         lastPartial = text
 
         val words = text.splitToWords()
@@ -529,8 +562,18 @@ class TextInjector(
      *
      * [committedWords] and [sessionStarted] are reset so the injector is ready for the
      * next recording session within the same input field.
+     *
+     * Returns the text this dictation typed (also recorded for [undoDictation]), or `null`
+     * when it cannot be told.
      */
-    fun commitFinal(text: String) {
+    fun commitFinal(text: String): String? {
+        val anchor = dictationAnchor ?: readBeforeCursor()
+        dictationAnchor = null
+        commitFinalText(text)
+        return recordDictation(anchor)
+    }
+
+    private fun commitFinalText(text: String) {
         lastPartial = ""
         val savedCommitted = committedWords.toList()
         val savedComposing = composingWords          // Saved before reset - needed for composing-anchor fallback
@@ -918,6 +961,7 @@ class TextInjector(
      * next session.
      */
     fun clear() {
+        dictationAnchor = null
         lastPartial = ""
         committedWords = mutableListOf()
         composingWords = emptyList()
@@ -1009,6 +1053,61 @@ class TextInjector(
         if (deleteCount > 0) {
             inputConnection.deleteSurroundingText(deleteCount, 0)
         }
+    }
+
+    /**
+     * Removes the text the last dictation typed ([commitFinal], [insertText]), if it is still
+     * right before the cursor. Returns whether it removed anything. When the text before the
+     * cursor no longer matches (the user edited it or moved the cursor), nothing is deleted
+     * and the undo history is dropped: its older entries cannot be trusted either.
+     */
+    fun undoDictation(): Boolean {
+        val last = dictations.lastOrNull() ?: return false
+        val before = inputConnection.getTextBeforeCursor(last.length, 0)?.toString()
+        if (before != last || hasActiveSelection()) {
+            Log.d(TAG, "Undo: the last dictation is no longer before the cursor - history dropped")
+            dictations.clear()
+            return false
+        }
+        dictations.removeLastOrNull()
+        inputConnection.deleteSurroundingText(last.length, 0)
+        return true
+    }
+
+    /**
+     * Types [text] at the cursor like a dictation (separated by a space from a preceding
+     * word), so [undoDictation] can remove it again. Returns what was typed.
+     */
+    fun insertText(text: String): String? {
+        if (text.isBlank()) return null
+        val anchor = readBeforeCursor()
+        lastPartial = ""
+        inputConnection.finishComposingText()
+        if (supportsComposing) ensureSeparatorSpace()
+        inputConnection.commitText(text, 1)
+        return recordDictation(anchor)
+    }
+
+    private fun readBeforeCursor(): String? =
+        inputConnection.getTextBeforeCursor(UNDO_WINDOW_CHARS, 0)?.toString()
+
+    /**
+     * Records what was typed since the text before the cursor was [anchor]: the text before
+     * the cursor must still start with [anchor]. Returns the typed text, or `null` when it
+     * cannot be told (nothing typed, the field changed otherwise, or it is longer than
+     * [UNDO_WINDOW_CHARS] so the read window moved).
+     */
+    private fun recordDictation(anchor: String?): String? {
+        if (isPassword) return null
+        val after = readBeforeCursor()
+        if (anchor == null || after == null || after.length <= anchor.length || !after.startsWith(anchor)) {
+            return null
+        }
+        val typed = after.substring(anchor.length)
+        if (typed.isBlank()) return null
+        dictations.addLast(typed)
+        while (dictations.size > MAX_UNDO_DICTATIONS) dictations.removeFirstOrNull()
+        return typed
     }
 
     // splitToWords() is now in TranscriptAligner - imported at the top.

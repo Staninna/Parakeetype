@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Atrás</string>
     <string name="cd_switch_keyboard">Cambiar teclado</string>
+    <string name="cd_undo_dictation">Deshacer el último dictado</string>
+    <string name="cd_reinsert_transcript">Volver a insertar el último dictado</string>
     <string name="cd_delete_all">Eliminar todo el texto</string>
     <string name="cd_delete_word">Eliminar la última palabra</string>
     <string name="cd_action_search">Buscar</string>

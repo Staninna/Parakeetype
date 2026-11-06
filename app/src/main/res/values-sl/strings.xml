@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Nazaj</string>
     <string name="cd_switch_keyboard">Preklopi tipkovnico</string>
+    <string name="cd_undo_dictation">Razveljavi zadnji narek</string>
+    <string name="cd_reinsert_transcript">Znova vstavi zadnji narek</string>
     <string name="cd_delete_all">Izbriši vse besedilo</string>
     <string name="cd_delete_word">Izbriši zadnjo besedo</string>
     <string name="cd_action_search">Iskanje</string>

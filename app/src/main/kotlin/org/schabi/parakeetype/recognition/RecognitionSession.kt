@@ -178,6 +178,12 @@ class RecognitionSession(
         fun onEndOfSpeech()
 
         /**
+         * The end-of-speech detection is about to stop the session on its own (not a [stop]
+         * call); followed by [onEndOfSpeech]. UIs confirm it with a haptic tick.
+         */
+        fun onEndpointed() = Unit
+
+        /**
          * Terminal: the recognised text of a non-segmented session. [words] times each word
          * of [text] (only with [RecognitionOptions.words], otherwise empty).
          */
@@ -432,6 +438,7 @@ class RecognitionSession(
 
             SpeechEndpointer.Event.EndOfSpeech -> {
                 Log.d(TAG, "End of speech detected")
+                listener.onEndpointed()
                 stop()
             }
 

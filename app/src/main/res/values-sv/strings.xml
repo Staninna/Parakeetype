@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Tillbaka</string>
     <string name="cd_switch_keyboard">Byt tangentbord</string>
+    <string name="cd_undo_dictation">Ångra senaste dikteringen</string>
+    <string name="cd_reinsert_transcript">Infoga senaste dikteringen igen</string>
     <string name="cd_delete_all">Radera all text</string>
     <string name="cd_delete_word">Radera sista ordet</string>
     <string name="cd_action_search">Sök</string>

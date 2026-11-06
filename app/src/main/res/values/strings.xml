@@ -29,6 +29,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Back</string>
     <string name="cd_switch_keyboard">Switch keyboard</string>
+    <string name="cd_undo_dictation">Undo last dictation</string>
+    <string name="cd_reinsert_transcript">Insert last dictation again</string>
     <string name="cd_delete_all">Delete all text</string>
     <string name="cd_delete_word">Delete last word</string>
     <string name="cd_action_search">Search</string>

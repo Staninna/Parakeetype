@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Vissza</string>
     <string name="cd_switch_keyboard">Billentyűzet váltása</string>
+    <string name="cd_undo_dictation">Utolsó diktálás visszavonása</string>
+    <string name="cd_reinsert_transcript">Utolsó diktálás ismételt beszúrása</string>
     <string name="cd_delete_all">Teljes szöveg törlése</string>
     <string name="cd_delete_word">Utolsó szó törlése</string>
     <string name="cd_action_search">Keresés</string>

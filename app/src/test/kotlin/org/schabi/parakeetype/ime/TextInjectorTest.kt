@@ -583,5 +583,66 @@ class TextInjectorTest {
         injector.deleteLastSentence()
         assertThat(ic.fieldText).isEmpty()
     }
+
+    // ── Undo / re-insert ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `undo removes the last dictation including its separator space`() {
+        ic.commitText("Hello", 1)
+        injector.setPartial("good morning")
+        val typed = injector.commitFinal("good morning")
+
+        assertThat(typed).isEqualTo(" good morning")
+        assertThat(injector.canUndo).isTrue()
+        assertThat(injector.undoDictation()).isTrue()
+        assertThat(ic.fieldText).isEqualTo("Hello")
+        assertThat(injector.canUndo).isFalse()
+    }
+
+    @Test
+    fun `undo steps back through several dictations`() {
+        injector.commitFinal("First.")
+        injector.setPartial("Second.")
+        injector.commitFinal("Second.")
+
+        assertThat(injector.undoDictation()).isTrue()
+        assertThat(ic.fieldText).isEqualTo("First.")
+        assertThat(injector.undoDictation()).isTrue()
+        assertThat(ic.fieldText).isEmpty()
+        assertThat(injector.undoDictation()).isFalse()
+    }
+
+    @Test
+    fun `undo leaves text alone after the user edited it`() {
+        injector.commitFinal("Hello world")
+        ic.commitText("!", 1)
+
+        assertThat(injector.undoDictation()).isFalse()
+        assertThat(ic.fieldText).isEqualTo("Hello world!")
+        assertThat(injector.canUndo).isFalse()
+    }
+
+    @Test
+    fun `insertText types the text after a space and can be undone`() {
+        ic.commitText("Note:", 1)
+        val typed = injector.insertText("buy milk")
+
+        assertThat(typed).isEqualTo(" buy milk")
+        assertThat(ic.fieldText).isEqualTo("Note: buy milk")
+        assertThat(injector.undoDictation()).isTrue()
+        assertThat(ic.fieldText).isEqualTo("Note:")
+    }
+
+    @Test
+    fun `password fields keep no undo history`() {
+        val password = TextInjector(
+            ic,
+            EditorInfo().apply {
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            },
+        )
+        assertThat(password.commitFinal("secret")).isNull()
+        assertThat(password.canUndo).isFalse()
+    }
 }
 

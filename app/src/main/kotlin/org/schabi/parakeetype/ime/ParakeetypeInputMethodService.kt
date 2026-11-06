@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import android.view.HapticFeedbackConstants
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.core.view.ViewCompat
@@ -193,6 +194,12 @@ class ParakeetypeInputMethodService :
         // came from.
         keyboardViewModel.onCloseForBusyMic = { switchBack ->
             if (!switchBack || !switchToPreviousInputMethod()) requestHideSelf(0)
+        }
+
+        // Instant mode stopped on its own after the user stopped speaking: a short haptic
+        // confirmation (follows the system's touch-feedback setting, no permission needed).
+        keyboardViewModel.onEndOfSpeechDetected = {
+            window?.window?.decorView?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
         keyboardViewModel.onMissingRepo = {

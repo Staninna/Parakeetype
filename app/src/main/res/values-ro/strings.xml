@@ -30,6 +30,8 @@
     <!-- Content descriptions -->
     <string name="cd_back">Înapoi</string>
     <string name="cd_switch_keyboard">Schimbați tastatura</string>
+    <string name="cd_undo_dictation">Anulează ultima dictare</string>
+    <string name="cd_reinsert_transcript">Inserează din nou ultima dictare</string>
     <string name="cd_delete_all">Ștergeți tot textul</string>
     <string name="cd_delete_word">Ștergeți ultimul cuvânt</string>
     <string name="cd_action_search">Căutați</string>

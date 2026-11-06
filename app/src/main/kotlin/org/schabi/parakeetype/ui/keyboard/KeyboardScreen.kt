@@ -4,7 +4,9 @@ import android.content.res.Configuration
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SubdirectoryArrowLeft
@@ -52,7 +54,9 @@ import org.schabi.parakeetype.ui.theme.ParakeetypeKeyboardTheme
  * Layout (top → bottom):
  *  1. Top row: a left slot plus the Switch Keyboard button on the right. The left slot shows
  *     the [LanguageSelector] (Whisper models only, while idle) or otherwise the
- *     [StatusIndicator] (listening / processing / transcribing / error / loading).
+ *     [StatusIndicator] (listening / processing / transcribing / error / loading). While
+ *     idle, Undo (remove the last dictation) and Re-insert (type the last transcript again)
+ *     sit left of the Switch Keyboard button, each only when it has something to do.
  *  2. Bottom row (left → right):
  *       [Delete All] · [TalkButton] · [Delete Word] · [Enter]
  *     The two delete keys flank the TalkButton; Enter is pinned to the right edge. The
@@ -77,6 +81,8 @@ import org.schabi.parakeetype.ui.theme.ParakeetypeKeyboardTheme
  * @param onEnterAction          Perform the context-aware Enter action (newline or IME action).
  * @param enterAction            The semantic action for the Enter key in the current editor.
  * @param onSwitchKeyboard       Switches the active IME back to the previous keyboard.
+ * @param onUndo                 Removes what the last dictation typed; `null` hides the key.
+ * @param onReinsert             Types the last transcript again; `null` hides the key.
  * @param onOpenCompanionApp     Opens the Parakeetype companion app (e.g. to grant permission or download the model).
  * @param micLevel             Microphone level in [0, 1] while recording (read lazily so only
  *                               the talk button recomposes on every update).
@@ -102,6 +108,8 @@ fun KeyboardScreen(
     onSwitchKeyboard: () -> Unit,
     onOpenCompanionApp: () -> Unit,
     modifier: Modifier = Modifier,
+    onUndo: (() -> Unit)? = null,
+    onReinsert: (() -> Unit)? = null,
     micLevel: () -> Float = { 0f },
     diagnostics: PipelineDiagnostics = PipelineDiagnostics(),
     previewForceLockHint: Boolean = false,
@@ -209,12 +217,32 @@ fun KeyboardScreen(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Box(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val idle = uiState is KeyboardUiState.Idle
+                    if (idle && onUndo != null) {
+                        KeyboardActionButton(
+                            icon = Icons.AutoMirrored.Rounded.Undo,
+                            contentDescription = stringResource(R.string.cd_undo_dictation),
+                            onClick = onUndo,
+                            repeatEnabled = false,
+                        )
+                    }
+                    if (idle && onReinsert != null) {
+                        KeyboardActionButton(
+                            icon = Icons.Rounded.History,
+                            contentDescription = stringResource(R.string.cd_reinsert_transcript),
+                            onClick = onReinsert,
+                            repeatEnabled = false,
+                        )
+                    }
                     KeyboardActionButton(
                         icon = Icons.Rounded.Keyboard,
                         contentDescription = stringResource(R.string.cd_switch_keyboard),
                         onClick = onSwitchKeyboard,
-                        modifier = Modifier.align(Alignment.CenterEnd),
                     )
                 }
             }
@@ -458,6 +486,8 @@ fun KeyboardScreen(
     val positionPortrait by viewModel.keyboardPositionPortrait.collectAsState()
     val positionLandscape by viewModel.keyboardPositionLandscape.collectAsState()
     val leftHanded by viewModel.leftHandedMode.collectAsState()
+    val canUndo by viewModel.canUndo.collectAsState()
+    val lastTranscript by viewModel.lastTranscript.collectAsState()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     // Only surface real diagnostics counters when the user has enabled the badge in settings.
@@ -480,6 +510,8 @@ fun KeyboardScreen(
         enterAction = enterAction,
         onSwitchKeyboard = onSwitchKeyboard,
         onOpenCompanionApp = onOpenCompanionApp,
+        onUndo = if (canUndo) viewModel::undoDictation else null,
+        onReinsert = if (lastTranscript != null) viewModel::reinsertLastTranscript else null,
         micLevel = { micLevel },
         diagnostics = diagnostics,
         keyboardContentHeightPx = keyboardContentHeightPx,
