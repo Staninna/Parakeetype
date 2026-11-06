@@ -126,15 +126,16 @@ class BubbleAccessibilityService : AccessibilityService() {
         val keyboard = findKeyboard()
         keyboardTop = keyboard.top
         if (session != null) {
-            // Dismissing the keyboard mid-dictation (Back, or navigating away) would otherwise
+            // Navigating away mid-dictation (no text field focused any more) would otherwise
             // leave this segmented session recording with no silence timeout; cancel it.
-            // Otherwise keep the bubble and follow the keyboard while dictating.
-            if (keyboard.top == null) cancelDictation() else placeBubble()
+            // Otherwise keep the bubble and follow the keyboard (if any) while dictating.
+            if (findEditableFocus() == null) cancelDictation() else placeBubble()
             return
         }
         val field = findEditableFocus()
-        // A field keeps focus after Back dismisses the keyboard; only show while one is up.
-        val show = field != null && keyboard.top != null && !keyboard.isOwn
+        // Show on any focused field, also when no keyboard is up (e.g. after Back dismissed it);
+        // without a keyboard the bubble sits at its remembered free height.
+        val show = field != null && !keyboard.isOwn
         if (show) showBubble() else hideBubble()
     }
 
