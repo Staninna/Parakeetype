@@ -232,6 +232,4 @@
     <string name="home_bubble_disabled_subtitle">Opcional: activa «Burbuja de dictado de Parakeetype» en Accesibilidad para dictar con tu teclado habitual. Si el interruptor está atenuado, permite primero los ajustes restringidos en la información de la app de Parakeetype.</string>
     <string name="bubble_done">Listo, insertar texto</string>
     <string name="bubble_cancel">Cancelar dictado</string>
-    <string name="bubble_hide">Ocultar para este campo</string>
-    <string name="bubble_hidden_toast">Burbuja oculta hasta que toques otro campo de texto</string>
 </resources>

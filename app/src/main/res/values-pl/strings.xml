@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Opcjonalnie: włącz „Dymek dyktowania Parakeetype” w Ułatwieniach dostępu, aby dyktować przy użyciu zwykłej klawiatury. Jeśli przełącznik jest wyszarzony, najpierw zezwól na ograniczone ustawienia w informacjach o aplikacji Parakeetype.</string>
     <string name="bubble_done">Gotowe, wstaw tekst</string>
     <string name="bubble_cancel">Anuluj dyktowanie</string>
-    <string name="bubble_hide">Ukryj dla tego pola</string>
-    <string name="bubble_hidden_toast">Dymek ukryty, dopóki nie dotkniesz innego pola tekstowego</string>
 </resources>

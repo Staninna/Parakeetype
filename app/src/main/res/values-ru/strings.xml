@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Необязательно: включите «Кнопка диктовки Parakeetype» в разделе «Специальные возможности», чтобы диктовать с обычной клавиатуры. Если переключатель неактивен, сначала разрешите ограниченные настройки в сведениях о приложении Parakeetype.</string>
     <string name="bubble_done">Готово, вставить текст</string>
     <string name="bubble_cancel">Отменить диктовку</string>
-    <string name="bubble_hide">Скрыть для этого поля</string>
-    <string name="bubble_hidden_toast">Кнопка скрыта, пока вы не коснётесь другого текстового поля</string>
 </resources>

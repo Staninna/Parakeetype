@@ -232,6 +232,4 @@
     <string name="home_bubble_disabled_subtitle">Facoltativo: attiva «Bolla di dettatura Parakeetype» in Accessibilità per dettare con la tua tastiera abituale. Se l\'interruttore è disattivato, consenti prima le impostazioni con restrizioni nelle info dell\'app Parakeetype.</string>
     <string name="bubble_done">Fatto, inserisci il testo</string>
     <string name="bubble_cancel">Annulla dettatura</string>
-    <string name="bubble_hide">Nascondi per questo campo</string>
-    <string name="bubble_hidden_toast">Bolla nascosta finché non tocchi un altro campo di testo</string>
 </resources>

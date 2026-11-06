@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Valikuline: lülitage Juurdepääsetavuse all sisse „Parakeetype dikteerimismull“, et dikteerida tavalise klaviatuuriga. Kui lüliti on tuhm, lubage esmalt Parakeetype\'i rakenduse teabes piiratud sätted.</string>
     <string name="bubble_done">Valmis, lisa tekst</string>
     <string name="bubble_cancel">Tühista dikteerimine</string>
-    <string name="bubble_hide">Peida selle välja jaoks</string>
-    <string name="bubble_hidden_toast">Mull on peidetud, kuni puudutate muud tekstivälja</string>
 </resources>

@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Volitelné: zapněte „Bublina diktování Parakeetype“ v Přístupnosti, abyste mohli diktovat běžnou klávesnicí. Pokud je přepínač šedý, povolte nejprve omezená nastavení v informacích o aplikaci Parakeetype.</string>
     <string name="bubble_done">Hotovo, vložit text</string>
     <string name="bubble_cancel">Zrušit diktování</string>
-    <string name="bubble_hide">Skrýt pro toto pole</string>
-    <string name="bubble_hidden_toast">Bublina skrytá, dokud neklepnete na jiné textové pole</string>
 </resources>

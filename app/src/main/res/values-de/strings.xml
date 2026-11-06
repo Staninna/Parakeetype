@@ -257,6 +257,4 @@
     <string name="home_bubble_disabled_subtitle">Optional: Aktiviere „Parakeetype-Diktierblase“ unter Bedienungshilfen, um mit deiner normalen Tastatur zu diktieren. Ist der Schalter ausgegraut, erlaube zuerst eingeschränkte Einstellungen in den App-Infos von Parakeetype.</string>
     <string name="bubble_done">Fertig, Text einfügen</string>
     <string name="bubble_cancel">Diktat abbrechen</string>
-    <string name="bubble_hide">Für dieses Feld ausblenden</string>
-    <string name="bubble_hidden_toast">Blase ausgeblendet, bis du auf ein anderes Textfeld tippst</string>
 </resources>

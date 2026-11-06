@@ -232,6 +232,4 @@
     <string name="home_bubble_disabled_subtitle">Opțional: activează „Bulă de dictare Parakeetype” în Accesibilitate pentru a dicta cu tastatura obișnuită. Dacă comutatorul este estompat, permite mai întâi setările restricționate în informațiile aplicației Parakeetype.</string>
     <string name="bubble_done">Gata, inserează textul</string>
     <string name="bubble_cancel">Anulează dictarea</string>
-    <string name="bubble_hide">Ascunde pentru acest câmp</string>
-    <string name="bubble_hidden_toast">Bula este ascunsă până atingi alt câmp de text</string>
 </resources>

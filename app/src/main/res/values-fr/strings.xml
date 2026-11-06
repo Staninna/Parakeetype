@@ -232,6 +232,4 @@
     <string name="home_bubble_disabled_subtitle">Facultatif : activez « Bulle de dictée Parakeetype » dans Accessibilité pour dicter avec votre clavier habituel. Si l\'interrupteur est grisé, autorisez d\'abord les paramètres restreints dans les infos de l\'appli Parakeetype.</string>
     <string name="bubble_done">Terminé, insérer le texte</string>
     <string name="bubble_cancel">Annuler la dictée</string>
-    <string name="bubble_hide">Masquer pour ce champ</string>
-    <string name="bubble_hidden_toast">Bulle masquée jusqu\'à ce que vous touchiez un autre champ de texte</string>
 </resources>

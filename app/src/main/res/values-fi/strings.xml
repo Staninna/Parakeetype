@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Valinnainen: ota "Parakeetypen sanelukupla" käyttöön Esteettömyys-asetuksissa, jotta voit sanella tavallisella näppäimistölläsi. Jos kytkin on himmennetty, salli ensin rajoitetut asetukset Parakeetypen sovellustiedoissa.</string>
     <string name="bubble_done">Valmis, lisää teksti</string>
     <string name="bubble_cancel">Peruuta sanelu</string>
-    <string name="bubble_hide">Piilota tältä kentältä</string>
-    <string name="bubble_hidden_toast">Kupla piilotettu, kunnes napautat toista tekstikenttää</string>
 </resources>

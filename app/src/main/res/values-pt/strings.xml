@@ -232,6 +232,4 @@
     <string name="home_bubble_disabled_subtitle">Opcional: ative «Balão de ditado do Parakeetype» em Acessibilidade para ditar com o seu teclado habitual. Se o botão estiver esbatido, permita primeiro as definições restritas nas informações da app do Parakeetype.</string>
     <string name="bubble_done">Concluído, inserir texto</string>
     <string name="bubble_cancel">Cancelar ditado</string>
-    <string name="bubble_hide">Ocultar para este campo</string>
-    <string name="bubble_hidden_toast">Balão oculto até tocar noutro campo de texto</string>
 </resources>

@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Valgfrit: Slå "Parakeetype-dikteringsboble" til under Tilgængelighed for at diktere med dit almindelige tastatur. Hvis kontakten er nedtonet, skal du først tillade begrænsede indstillinger i Parakeetypes appinfo.</string>
     <string name="bubble_done">Færdig, indsæt tekst</string>
     <string name="bubble_cancel">Annullér diktering</string>
-    <string name="bubble_hide">Skjul for dette felt</string>
-    <string name="bubble_hidden_toast">Boble skjult, indtil du trykker på et andet tekstfelt</string>
 </resources>

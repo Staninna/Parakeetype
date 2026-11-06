@@ -56,8 +56,7 @@ private const val DEFAULT_LIFT_DP = 8
  * and the height above the keyboard). Tapping it starts a segmented [RecognitionSession] — the
  * same pipeline and loaded model as the keyboard and the system recognizer — and turns it into
  * a recording pill with a live waveform, cancel and done. Each finished utterance is inserted
- * at the cursor of the field that was focused when dictation started. A long-press hides the
- * bubble until another field is focused.
+ * at the cursor of the field that was focused when dictation started.
  *
  * Insertion uses [AccessibilityNodeInfo.ACTION_SET_TEXT] (splicing at the selection), and
  * falls back to the clipboard plus [AccessibilityNodeInfo.ACTION_PASTE]. The bubble is a
@@ -82,9 +81,6 @@ class BubbleAccessibilityService : AccessibilityService() {
 
     /** The field dictation started in; utterances go here even if focus moves meanwhile. */
     private var target: AccessibilityNodeInfo? = null
-
-    /** The field the user hid the bubble for (long-press); it shows again on another field. */
-    private var hiddenFor: AccessibilityNodeInfo? = null
 
     /** Top edge of the visible keyboard in screen pixels, or `null` when none is seen. */
     private var keyboardTop: Int? = null
@@ -137,9 +133,8 @@ class BubbleAccessibilityService : AccessibilityService() {
             return
         }
         val field = findEditableFocus()
-        if (field == null || field != hiddenFor) hiddenFor = null
         // A field keeps focus after Back dismisses the keyboard; only show while one is up.
-        val show = field != null && keyboard.top != null && !keyboard.isOwn && hiddenFor == null
+        val show = field != null && keyboard.top != null && !keyboard.isOwn
         if (show) showBubble() else hideBubble()
     }
 
@@ -191,7 +186,6 @@ class BubbleAccessibilityService : AccessibilityService() {
                     BubbleContent(
                         state = ui,
                         onStart = ::startDictation,
-                        onHide = ::hideForField,
                         onFinish = ::finishDictation,
                         onCancel = ::cancelDictation,
                     )
@@ -304,13 +298,6 @@ class BubbleAccessibilityService : AccessibilityService() {
         v.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
         computePosition(lp)
         if (attached) windowManager.updateViewLayout(v, lp)
-    }
-
-    private fun hideForField() {
-        hiddenFor = findEditableFocus()
-        view?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-        toast(R.string.bubble_hidden_toast)
-        hideBubble()
     }
 
     /** Height (and idle width) of the overlay window: the bubble plus its shadow padding. */

@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Προαιρετικό: ενεργοποιήστε τη «Φυσαλίδα υπαγόρευσης Parakeetype» στην Προσβασιμότητα για να υπαγορεύετε με το συνηθισμένο πληκτρολόγιό σας. Αν ο διακόπτης είναι ανενεργός, επιτρέψτε πρώτα τις περιορισμένες ρυθμίσεις στις πληροφορίες εφαρμογής του Parakeetype.</string>
     <string name="bubble_done">Έτοιμο, εισαγωγή κειμένου</string>
     <string name="bubble_cancel">Ακύρωση υπαγόρευσης</string>
-    <string name="bubble_hide">Απόκρυψη για αυτό το πεδίο</string>
-    <string name="bubble_hidden_toast">Η φυσαλίδα κρύφτηκε μέχρι να πατήσετε άλλο πεδίο κειμένου</string>
 </resources>

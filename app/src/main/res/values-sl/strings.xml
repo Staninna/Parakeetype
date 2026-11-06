@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Izbirno: vklopite »Mehurček za narekovanje Parakeetype« v Dostopnosti za narekovanje z običajno tipkovnico. Če je stikalo zatemnjeno, najprej dovolite omejene nastavitve v podatkih o aplikaciji Parakeetype.</string>
     <string name="bubble_done">Končano, vstavi besedilo</string>
     <string name="bubble_cancel">Prekliči narekovanje</string>
-    <string name="bubble_hide">Skrij za to polje</string>
-    <string name="bubble_hidden_toast">Mehurček skrit, dokler ne tapnete drugega besedilnega polja</string>
 </resources>

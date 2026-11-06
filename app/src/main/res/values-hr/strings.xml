@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Neobavezno: uključite „Mjehurić za diktiranje Parakeetype“ u Pristupačnosti kako biste diktirali uobičajenom tipkovnicom. Ako je prekidač zasivljen, najprije dopustite ograničene postavke u informacijama o aplikaciji Parakeetype.</string>
     <string name="bubble_done">Gotovo, umetni tekst</string>
     <string name="bubble_cancel">Odustani od diktiranja</string>
-    <string name="bubble_hide">Sakrij za ovo polje</string>
-    <string name="bubble_hidden_toast">Mjehurić skriven dok ne dodirnete drugo tekstno polje</string>
 </resources>

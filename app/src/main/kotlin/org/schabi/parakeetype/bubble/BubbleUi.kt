@@ -16,6 +16,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,7 +96,6 @@ val BUBBLE_SIZE = 56.dp
 fun BubbleContent(
     state: BubbleUiState,
     onStart: () -> Unit,
-    onHide: () -> Unit,
     onFinish: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -115,7 +115,7 @@ fun BubbleContent(
             label = "bubble",
         ) { idle ->
             if (idle) {
-                MicButton(onStart = onStart, onHide = onHide)
+                MicButton(onStart = onStart)
             } else {
                 RecordingPill(state = state, onFinish = onFinish, onCancel = onCancel)
             }
@@ -124,9 +124,8 @@ fun BubbleContent(
 }
 
 @Composable
-private fun MicButton(onStart: () -> Unit, onHide: () -> Unit) {
+private fun MicButton(onStart: () -> Unit) {
     val start = stringResource(R.string.bubble_start_dictation)
-    val hide = stringResource(R.string.bubble_hide)
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,
@@ -139,12 +138,7 @@ private fun MicButton(onStart: () -> Unit, onHide: () -> Unit) {
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .clip(CircleShape)
-                .combinedClickable(
-                    onClickLabel = start,
-                    onLongClickLabel = hide,
-                    onLongClick = onHide,
-                    onClick = onStart,
-                )
+                .clickable(onClickLabel = start, onClick = onStart)
                 .semantics { contentDescription = start },
         ) {
             Icon(Icons.Rounded.Mic, contentDescription = null, modifier = Modifier.size(28.dp))

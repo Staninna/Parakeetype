@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">По избор: включете „Балон за диктовка на Parakeetype“ в Достъпност, за да диктувате с обичайната си клавиатура. Ако превключвателят е сив, първо разрешете ограничените настройки в информацията за приложението Parakeetype.</string>
     <string name="bubble_done">Готово, вмъкване на текста</string>
     <string name="bubble_cancel">Отказ от диктовката</string>
-    <string name="bubble_hide">Скриване за това поле</string>
-    <string name="bubble_hidden_toast">Балонът е скрит, докато не докоснете друго текстово поле</string>
 </resources>

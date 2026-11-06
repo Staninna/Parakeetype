@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Opcionális: kapcsolja be a „Parakeetype diktálóbuborék” szolgáltatást a Kisegítő lehetőségeknél, hogy a szokásos billentyűzetével diktálhasson. Ha a kapcsoló szürke, előbb engedélyezze a korlátozott beállításokat a Parakeetype alkalmazásadatainál.</string>
     <string name="bubble_done">Kész, szöveg beszúrása</string>
     <string name="bubble_cancel">Diktálás megszakítása</string>
-    <string name="bubble_hide">Elrejtés ehhez a mezőhöz</string>
-    <string name="bubble_hidden_toast">A buborék el van rejtve, amíg egy másik szövegmezőre nem koppint</string>
 </resources>

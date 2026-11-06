@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Mhux obbligatorju: ixgħel "Bużżieqa tad-dettat ta\' Parakeetype" taħt Aċċessibbiltà biex tiddetta bit-tastiera tas-soltu. Jekk il-buttuna hija griża, l-ewwel ippermetti l-issettjar ristrett fl-informazzjoni tal-app ta\' Parakeetype.</string>
     <string name="bubble_done">Lest, daħħal it-test</string>
     <string name="bubble_cancel">Ikkanċella d-dettat</string>
-    <string name="bubble_hide">Aħbi għal dan il-qasam</string>
-    <string name="bubble_hidden_toast">Il-bużżieqa moħbija sakemm tagħfas qasam tat-test ieħor</string>
 </resources>

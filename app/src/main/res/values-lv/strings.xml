@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Neobligāti: ieslēdziet „Parakeetype diktēšanas burbulis“ sadaļā Pieejamība, lai diktētu ar parasto tastatūru. Ja slēdzis ir pelēks, vispirms atļaujiet ierobežotos iestatījumus Parakeetype lietotnes informācijā.</string>
     <string name="bubble_done">Gatavs, ievietot tekstu</string>
     <string name="bubble_cancel">Atcelt diktēšanu</string>
-    <string name="bubble_hide">Slēpt šim laukam</string>
-    <string name="bubble_hidden_toast">Burbulis paslēpts, līdz pieskaraties citam teksta laukam</string>
 </resources>

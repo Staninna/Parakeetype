@@ -231,6 +231,4 @@
     <string name="home_bubble_disabled_subtitle">Valfritt: slå på "Parakeetype-dikteringsbubbla" under Tillgänglighet för att diktera med ditt vanliga tangentbord. Om reglaget är nedtonat, tillåt först begränsade inställningar i Parakeetypes appinfo.</string>
     <string name="bubble_done">Klar, infoga text</string>
     <string name="bubble_cancel">Avbryt diktering</string>
-    <string name="bubble_hide">Dölj för det här fältet</string>
-    <string name="bubble_hidden_toast">Bubblan är dold tills du trycker på ett annat textfält</string>
 </resources>
