@@ -1,0 +1,223 @@
+# Signed release pipeline from the droidfork kit (tailored to this app by /droid-setup).
+#
+# Builds the release APK(s) with Gradle, signs them with the key stored in the repository
+# secrets, and publishes them (plus SHA256SUMS) as a GitHub Release.
+#
+# Triggers:
+#   - every push to my-main: tagged automatically as v<versionName>-fork.<n>
+#     (add [skip ci] to the commit message to push without releasing)
+#   - pushing a tag that starts with "v" (e.g. v1.2.3-fork.7): releases that tag
+#   - "Run workflow" in the Actions tab (needs this file on the default branch)
+#
+# Secrets (set by the droidfork signing-key.sh script):
+#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+#
+# Optional repository variables (Settings > Secrets and variables > Actions > Variables):
+#   RELEASE_JAVA_VERSION   JDK version
+#   RELEASE_GRADLE_TASKS   Gradle tasks to run
+#   RELEASE_APK_GLOB       which APKs to sign
+
+name: Release
+
+on:
+  push:
+    # Every push to my-main publishes a new release (v<versionName>-fork.<n>).
+    # Add [skip ci] to a commit message to push without releasing.
+    branches:
+      - my-main
+    # A pushed v* tag releases exactly that tag.
+    tags:
+      - "v*"
+    # Pushes that only change docs or store metadata don't need a new release.
+    # (Path filters are ignored for tag pushes.)
+    paths-ignore:
+      - "**/*.md"
+      - "fastlane/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - "LICENSE*"
+      - "docs/**"
+      - "devtools/**"
+      - "how-to-release.txt"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to create (empty: next v<versionName>-fork.<n>)"
+        required: false
+        default: ""
+      prerelease:
+        description: "Mark as pre-release"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+# One release at a time, so automatic tag numbers never clash; later pushes wait in line.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      JAVA_VERSION: ${{ vars.RELEASE_JAVA_VERSION || '21' }}
+      GRADLE_TASKS: ${{ vars.RELEASE_GRADLE_TASKS || ':app:assembleRelease' }}
+      APK_GLOB: ${{ vars.RELEASE_APK_GLOB || 'app/build/outputs/apk/release/*.apk' }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Check signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          missing=""
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing. Run /droid-setup (or droidfork signing-key.sh) for this repository."
+            exit 1
+          fi
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # The default ("tools platform-tools") fails: the legacy "tools" package no longer exists.
+          # Gradle downloads the platforms/build-tools/NDK the project needs by itself.
+          packages: platform-tools
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Determine tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            tag="$GITHUB_REF_NAME"
+          elif [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"
+          else
+            # First versionName found in a Gradle build file (Groovy or Kotlin DSL).
+            version=$(grep -rhoE --include='build.gradle' --include='build.gradle.kts' \
+              "versionName\s*=?\s*[\"'][^\"']+[\"']" . 2>/dev/null | head -n1 \
+              | sed -E "s/.*[\"']([^\"']+)[\"'].*/\1/" || true)
+            [ -n "$version" ] || version="$(date -u +%Y.%m.%d)"
+            VERSION="$version"
+            # Automatic release (push to my-main or manual run without a tag).
+            # Reuse a fork release tag already on this commit, otherwise take the next free number.
+            # Only -fork.<n> tags count: forks also carry upstream's own tags (e.g. v1.2.0), and
+            # the fork's build must never be published under one of those.
+            git fetch --tags --force --quiet origin || true
+            tag="$(git tag --points-at HEAD --list 'v*-fork.*' | head -n1)"
+            if [ -z "$tag" ]; then
+              n=1
+              while git rev-parse -q --verify "refs/tags/v${VERSION}-fork.${n}" >/dev/null; do
+                n=$((n + 1))
+              done
+              tag="v${VERSION}-fork.${n}"
+            fi
+          fi
+          echo "Release tag: $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          # The configuration cache is a speed-up that some plugins break; not needed for releases.
+          ./gradlew --no-configuration-cache $GRADLE_TASKS
+
+      - name: Sign APKs
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          keystore="$RUNNER_TEMP/release.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          trap 'rm -f "$keystore"' EXIT
+
+          build_tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n1)
+          echo "Using build-tools: $build_tools"
+
+          # Release APKs only: skip debug builds and test APKs.
+          apks=()
+          for apk in $APK_GLOB; do
+            case "$apk" in
+              */androidTest/*|*-androidTest*|*/debug/*|*-debug*.apk|*/intermediates/*) continue ;;
+            esac
+            apks+=("$apk")
+          done
+
+          if [ ${#apks[@]} -eq 0 ]; then
+            echo "::error::No release APKs found for '$APK_GLOB'. Set the RELEASE_APK_GLOB / RELEASE_GRADLE_TASKS variables."
+            find . -path '*/build/outputs/*' -name '*.apk' || true
+            exit 1
+          fi
+
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          mkdir -p dist
+          for apk in "${apks[@]}"; do
+            name=$(basename "$apk" .apk)
+            name=${name%-unsigned}
+            out="dist/${repo_name}-${TAG}-${name}.apk"
+            aligned="$RUNNER_TEMP/aligned.apk"
+
+            # 16 KB page alignment when supported (needed for native libs on newer devices).
+            "$build_tools/zipalign" -P 16 -f 4 "$apk" "$aligned" 2>/dev/null \
+              || "$build_tools/zipalign" -p -f 4 "$apk" "$aligned"
+
+            "$build_tools/apksigner" sign \
+              --ks "$keystore" \
+              --ks-pass env:KEYSTORE_PASSWORD \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass env:KEY_PASSWORD \
+              --out "$out" "$aligned"
+
+            "$build_tools/apksigner" verify --print-certs "$out" | head -n 3
+            rm -f "$aligned" "$out.idsig"
+            echo "Signed: $out"
+          done
+
+          (cd dist && sha256sum *.apk > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.tag.outputs.tag }}
+          path: dist/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.tag.outputs.tag }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          generate_release_notes: true
+          files: dist/*
