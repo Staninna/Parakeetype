@@ -31,6 +31,7 @@
     <string name="cd_back">Πίσω</string>
     <string name="cd_switch_keyboard">Εναλλαγή πληκτρολογίου</string>
     <string name="cd_undo_dictation">Αναίρεση τελευταίας υπαγόρευσης</string>
+    <string name="cd_redo_dictation">Επανάληψη τελευταίας υπαγόρευσης</string>
     <string name="cd_reinsert_transcript">Επανεισαγωγή τελευταίας υπαγόρευσης</string>
     <string name="cd_delete_all">Διαγραφή όλου του κειμένου</string>
     <string name="cd_delete_word">Διαγραφή τελευταίας λέξης</string>

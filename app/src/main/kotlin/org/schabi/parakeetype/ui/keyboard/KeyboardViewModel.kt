@@ -236,6 +236,25 @@ class KeyboardViewModel(
         textInjector = injector
         _enterAction.value = injector?.enterAction ?: EnterAction.DONE
         _canUndo.value = injector?.canUndo == true
+        _canRedo.value = injector?.canRedo == true
+    }
+
+    private val _canRedo = MutableStateFlow(false)
+
+    /** `true` when the current field has an undone dictation that [redoDictation] can type back. */
+    val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
+
+    private fun updateUndoState(injector: TextInjector) {
+        _canUndo.value = injector.canUndo
+        _canRedo.value = injector.canRedo
+    }
+
+    /** Types back what the last undo removed from the current field (only while idle). */
+    fun redoDictation() {
+        if (_uiState.value !is KeyboardUiState.Idle) return
+        val injector = textInjector ?: return
+        injector.redoDictation()
+        updateUndoState(injector)
     }
 
     private val _canUndo = MutableStateFlow(false)
@@ -263,7 +282,7 @@ class KeyboardViewModel(
             sessionTranscript.append(typed)
             _lastTranscript.value = sessionTranscript.toString()
         }
-        _canUndo.value = injector.canUndo
+        updateUndoState(injector)
     }
 
     /** Removes what the last dictation typed into the current field (only while idle). */
@@ -271,7 +290,7 @@ class KeyboardViewModel(
         if (_uiState.value !is KeyboardUiState.Idle) return
         val injector = textInjector ?: return
         injector.undoDictation()
-        _canUndo.value = injector.canUndo
+        updateUndoState(injector)
     }
 
     /**
@@ -283,7 +302,7 @@ class KeyboardViewModel(
         val text = _lastTranscript.value ?: return
         val injector = textInjector ?: return
         injector.insertText(text)
-        _canUndo.value = injector.canUndo
+        updateUndoState(injector)
     }
 
     /**
@@ -786,6 +805,7 @@ class KeyboardViewModel(
         textInjector?.clear()
         // The field is empty: nothing left to undo (its undo check would fail anyway).
         _canUndo.value = false
+        _canRedo.value = false
 
         val isActivelyRecording = _uiState.value is KeyboardUiState.Listening ||
                 _uiState.value is KeyboardUiState.Processing

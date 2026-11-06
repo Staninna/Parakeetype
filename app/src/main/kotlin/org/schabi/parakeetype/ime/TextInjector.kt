@@ -28,6 +28,9 @@ private fun isPasswordField(editorInfo: EditorInfo): Boolean {
 /** How much text before the cursor the undo history compares (fields longer than that get none). */
 private const val UNDO_WINDOW_CHARS = 10_000
 
+/** How much text before the cursor [TextInjector.redoDictation] checks is unchanged since the undo. */
+private const val REDO_CONTEXT_CHARS = 64
+
 /** How many dictations [TextInjector.undoDictation] can remove one after another. */
 private const val MAX_UNDO_DICTATIONS = 20
 
@@ -229,6 +232,19 @@ class TextInjector(
 
     /** `true` when [undoDictation] has a dictation to remove. */
     val canUndo: Boolean get() = dictations.isNotEmpty()
+
+    /**
+     * A dictation [undoDictation] removed: its [text] and the text before the cursor right
+     * after the removal ([context], up to [REDO_CONTEXT_CHARS]) — [redoDictation] types it
+     * back only while the field there is unchanged.
+     */
+    private class Undone(val text: String, val context: String)
+
+    /** Undone dictations, newest last — what [redoDictation] types back. */
+    private val undone = ArrayDeque<Undone>()
+
+    /** `true` when [redoDictation] has an undone dictation to type back. */
+    val canRedo: Boolean get() = undone.isNotEmpty()
 
     /**
      * Applies [displayCleanFn] to a word list joined by spaces.
@@ -1071,6 +1087,28 @@ class TextInjector(
         }
         dictations.removeLastOrNull()
         inputConnection.deleteSurroundingText(last.length, 0)
+        undone.addLast(Undone(last, inputConnection.getTextBeforeCursor(REDO_CONTEXT_CHARS, 0)?.toString().orEmpty()))
+        return true
+    }
+
+    /**
+     * Types back the dictation [undoDictation] removed last, if the text before the cursor is
+     * still as the undo left it. Returns whether it typed anything. Otherwise (the user typed,
+     * deleted or moved the cursor meanwhile) nothing is typed and the redo history is dropped.
+     */
+    fun redoDictation(): Boolean {
+        val entry = undone.lastOrNull() ?: return false
+        val before = inputConnection.getTextBeforeCursor(REDO_CONTEXT_CHARS, 0)?.toString().orEmpty()
+        if (before != entry.context || hasActiveSelection()) {
+            Log.d(TAG, "Redo: the field changed since the undo - history dropped")
+            undone.clear()
+            return false
+        }
+        undone.removeLastOrNull()
+        lastPartial = ""
+        inputConnection.finishComposingText()
+        inputConnection.commitText(entry.text, 1)
+        dictations.addLast(entry.text)
         return true
     }
 
@@ -1105,6 +1143,8 @@ class TextInjector(
         }
         val typed = after.substring(anchor.length)
         if (typed.isBlank()) return null
+        // A new dictation makes the undone ones stale, as in any editor.
+        undone.clear()
         dictations.addLast(typed)
         while (dictations.size > MAX_UNDO_DICTATIONS) dictations.removeFirstOrNull()
         return typed

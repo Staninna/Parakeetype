@@ -31,6 +31,7 @@
     <string name="cd_back">Lura</string>
     <string name="cd_switch_keyboard">Aqleb it-tastiera</string>
     <string name="cd_undo_dictation">Neħħi l-aħħar dettatura</string>
+    <string name="cd_redo_dictation">Erġa\' agħmel l-aħħar dettatura</string>
     <string name="cd_reinsert_transcript">Daħħal l-aħħar dettatura mill-ġdid</string>
     <string name="cd_delete_all">Ħassar it-test kollu</string>
     <string name="cd_delete_word">Ħassar l-aħħar kelma</string>

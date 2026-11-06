@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.History
@@ -55,8 +56,9 @@ import org.schabi.parakeetype.ui.theme.ParakeetypeKeyboardTheme
  *  1. Top row: a left slot plus the Switch Keyboard button on the right. The left slot shows
  *     the [LanguageSelector] (Whisper models only, while idle) or otherwise the
  *     [StatusIndicator] (listening / processing / transcribing / error / loading). While
- *     idle, Undo (remove the last dictation) and Re-insert (type the last transcript again)
- *     sit left of the Switch Keyboard button, each only when it has something to do.
+ *     idle, Undo (remove the last dictation), Redo (type it back) and Re-insert (type the
+ *     last transcript again) sit left of the Switch Keyboard button, each only when it has
+ *     something to do.
  *  2. Bottom row (left → right):
  *       [Delete All] · [TalkButton] · [Delete Word] · [Enter]
  *     The two delete keys flank the TalkButton; Enter is pinned to the right edge. The
@@ -82,6 +84,7 @@ import org.schabi.parakeetype.ui.theme.ParakeetypeKeyboardTheme
  * @param enterAction            The semantic action for the Enter key in the current editor.
  * @param onSwitchKeyboard       Switches the active IME back to the previous keyboard.
  * @param onUndo                 Removes what the last dictation typed; `null` hides the key.
+ * @param onRedo                 Types back what the last undo removed; `null` hides the key.
  * @param onReinsert             Types the last transcript again; `null` hides the key.
  * @param onOpenCompanionApp     Opens the Parakeetype companion app (e.g. to grant permission or download the model).
  * @param micLevel             Microphone level in [0, 1] while recording (read lazily so only
@@ -109,6 +112,7 @@ fun KeyboardScreen(
     onOpenCompanionApp: () -> Unit,
     modifier: Modifier = Modifier,
     onUndo: (() -> Unit)? = null,
+    onRedo: (() -> Unit)? = null,
     onReinsert: (() -> Unit)? = null,
     micLevel: () -> Float = { 0f },
     diagnostics: PipelineDiagnostics = PipelineDiagnostics(),
@@ -228,6 +232,14 @@ fun KeyboardScreen(
                             icon = Icons.AutoMirrored.Rounded.Undo,
                             contentDescription = stringResource(R.string.cd_undo_dictation),
                             onClick = onUndo,
+                            repeatEnabled = false,
+                        )
+                    }
+                    if (idle && onRedo != null) {
+                        KeyboardActionButton(
+                            icon = Icons.AutoMirrored.Rounded.Redo,
+                            contentDescription = stringResource(R.string.cd_redo_dictation),
+                            onClick = onRedo,
                             repeatEnabled = false,
                         )
                     }
@@ -487,6 +499,7 @@ fun KeyboardScreen(
     val positionLandscape by viewModel.keyboardPositionLandscape.collectAsState()
     val leftHanded by viewModel.leftHandedMode.collectAsState()
     val canUndo by viewModel.canUndo.collectAsState()
+    val canRedo by viewModel.canRedo.collectAsState()
     val lastTranscript by viewModel.lastTranscript.collectAsState()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -511,6 +524,7 @@ fun KeyboardScreen(
         onSwitchKeyboard = onSwitchKeyboard,
         onOpenCompanionApp = onOpenCompanionApp,
         onUndo = if (canUndo) viewModel::undoDictation else null,
+        onRedo = if (canRedo) viewModel::redoDictation else null,
         onReinsert = if (lastTranscript != null) viewModel::reinsertLastTranscript else null,
         micLevel = { micLevel },
         diagnostics = diagnostics,

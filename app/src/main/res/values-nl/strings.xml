@@ -31,6 +31,7 @@
     <string name="cd_back">Terug</string>
     <string name="cd_switch_keyboard">Toetsenbord wisselen</string>
     <string name="cd_undo_dictation">Laatste dictaat ongedaan maken</string>
+    <string name="cd_redo_dictation">Laatste dictaat opnieuw uitvoeren</string>
     <string name="cd_reinsert_transcript">Laatste dictaat opnieuw invoegen</string>
     <string name="cd_delete_all">Alle tekst verwijderen</string>
     <string name="cd_delete_word">Laatste woord verwijderen</string>

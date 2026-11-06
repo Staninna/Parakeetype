@@ -31,6 +31,7 @@
     <string name="cd_back">Voltar</string>
     <string name="cd_switch_keyboard">Mudar de teclado</string>
     <string name="cd_undo_dictation">Anular o último ditado</string>
+    <string name="cd_redo_dictation">Refazer o último ditado</string>
     <string name="cd_reinsert_transcript">Inserir novamente o último ditado</string>
     <string name="cd_delete_all">Eliminar todo o texto</string>
     <string name="cd_delete_word">Eliminar a última palavra</string>

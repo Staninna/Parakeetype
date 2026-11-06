@@ -644,5 +644,40 @@ class TextInjectorTest {
         assertThat(password.commitFinal("secret")).isNull()
         assertThat(password.canUndo).isFalse()
     }
+
+    @Test
+    fun `redo types back what undo removed`() {
+        ic.commitText("Hello", 1)
+        injector.commitFinal("good morning")
+        injector.undoDictation()
+
+        assertThat(injector.canRedo).isTrue()
+        assertThat(injector.redoDictation()).isTrue()
+        assertThat(ic.fieldText).isEqualTo("Hello good morning")
+        assertThat(injector.canRedo).isFalse()
+        // The redone dictation can be undone again.
+        assertThat(injector.undoDictation()).isTrue()
+        assertThat(ic.fieldText).isEqualTo("Hello")
+    }
+
+    @Test
+    fun `redo does nothing after the field changed`() {
+        injector.commitFinal("Hello world")
+        injector.undoDictation()
+        ic.commitText("typed", 1)
+
+        assertThat(injector.redoDictation()).isFalse()
+        assertThat(ic.fieldText).isEqualTo("typed")
+        assertThat(injector.canRedo).isFalse()
+    }
+
+    @Test
+    fun `a new dictation clears the redo history`() {
+        injector.commitFinal("First.")
+        injector.undoDictation()
+        injector.commitFinal("Second.")
+
+        assertThat(injector.canRedo).isFalse()
+    }
 }
 

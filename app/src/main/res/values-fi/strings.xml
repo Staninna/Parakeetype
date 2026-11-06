@@ -31,6 +31,7 @@
     <string name="cd_back">Takaisin</string>
     <string name="cd_switch_keyboard">Vaihda näppäimistöä</string>
     <string name="cd_undo_dictation">Kumoa viimeisin sanelu</string>
+    <string name="cd_redo_dictation">Tee viimeisin sanelu uudelleen</string>
     <string name="cd_reinsert_transcript">Lisää viimeisin sanelu uudelleen</string>
     <string name="cd_delete_all">Poista kaikki teksti</string>
     <string name="cd_delete_word">Poista viimeinen sana</string>
