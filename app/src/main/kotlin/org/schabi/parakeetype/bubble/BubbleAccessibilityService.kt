@@ -1,6 +1,7 @@
 package org.schabi.parakeetype.bubble
 
 import android.accessibilityservice.AccessibilityService
+import android.animation.ValueAnimator
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -15,6 +16,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.WindowManager
+import android.view.animation.DecelerateInterpolator
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
@@ -42,18 +44,26 @@ private const val UPDATE_DELAY_MS = 150L
 
 private const val PREFS = "bubble"
 private const val PREF_RIGHT = "docked_right"
-private const val PREF_LIFT = "lift_px"
-private const val PREF_FREE_Y = "free_y"
+/** Legacy: the old keyboard-relative height, replaced by the single [PREF_Y]. */
+private const val PREF_LIFT_LEGACY = "lift_px"
+private const val PREF_Y = "free_y"
 
 private const val EDGE_MARGIN_DP = 4
-private const val DEFAULT_LIFT_DP = 8
+
+/** Minimum gap between the bubble and the keyboard's top edge when the keyboard pushes it. */
+private const val KEYBOARD_GAP_DP = 8
+
+/** Default height of the bubble's top edge, as a fraction of the screen: above most keyboards. */
+private const val DEFAULT_Y_FRACTION = 0.35f
+
+private const val MOVE_ANIMATION_MS = 180L
 
 /**
  * Shows a floating microphone bubble on focused text fields while another keyboard is in use,
  * so dictation works without switching to the Parakeetype keyboard.
  *
- * The bubble docks to a screen side and rides just above the keyboard (a drag changes the side
- * and the height above the keyboard). Tapping it starts a segmented [RecognitionSession] — the
+ * The bubble docks to a screen side at a remembered height (a drag changes the side
+ * and the height; an open keyboard only pushes it up when it would cover it). Tapping it starts a segmented [RecognitionSession] — the
  * same pipeline and loaded model as the keyboard and the system recognizer — and turns it into
  * a recording pill with a live waveform, cancel and done. Each finished utterance is inserted
  * at the cursor of the field that was focused when dictation started.
@@ -92,6 +102,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         inference = InferenceConnection(this)
         ui.dockedRight = prefs().getBoolean(PREF_RIGHT, true)
+        prefs().edit().remove(PREF_LIFT_LEGACY).apply()
         scope.launch {
             AppPreferences(applicationContext).keepModelLoaded.collect {
                 keepModelLoaded = it
@@ -226,6 +237,7 @@ class BubbleAccessibilityService : AccessibilityService() {
     }
 
     private fun removeBubble() {
+        moveAnimator?.cancel()
         val v = view ?: return
         if (!attached) return
         try {
@@ -238,29 +250,60 @@ class BubbleAccessibilityService : AccessibilityService() {
 
     private var dragging = false
 
-    /** Re-anchors the bubble (e.g. the keyboard moved), unless the user is dragging it. */
+    private var moveAnimator: ValueAnimator? = null
+    private var moveTarget = 0
+
+    /**
+     * Moves the bubble to its computed place (e.g. the keyboard opened or closed), unless the
+     * user is dragging it. Height changes slide instead of jumping.
+     */
     private fun placeBubble() {
         val lp = params ?: return
         if (!attached || dragging) return
-        val oldX = lp.x; val oldY = lp.y; val oldGravity = lp.gravity
+        val fromY = moveAnimator?.takeIf { it.isRunning }?.animatedValue as? Int ?: lp.y
+        val oldX = lp.x; val oldGravity = lp.gravity
         computePosition(lp)
-        if (lp.x != oldX || lp.y != oldY || lp.gravity != oldGravity) windowManager.updateViewLayout(view, lp)
+        val toY = lp.y
+        val running = moveAnimator?.isRunning == true
+        if (lp.x == oldX && lp.gravity == oldGravity && (toY == fromY || (running && toY == moveTarget))) {
+            // Already there, or already sliding there: let the running slide finish.
+            if (running) lp.y = fromY
+            return
+        }
+        moveAnimator?.cancel()
+        if (lp.x != oldX || lp.gravity != oldGravity || toY == fromY) {
+            windowManager.updateViewLayout(view, lp)
+            return
+        }
+        lp.y = fromY
+        moveTarget = toY
+        moveAnimator = ValueAnimator.ofInt(fromY, toY).apply {
+            duration = MOVE_ANIMATION_MS
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                if (!attached || dragging) return@addUpdateListener
+                lp.y = it.animatedValue as Int
+                windowManager.updateViewLayout(view, lp)
+            }
+            start()
+        }
     }
 
-    /** Docked side → gravity; height → just above the keyboard, or the remembered free height. */
+    /**
+     * Docked side → gravity. Height: the one remembered position, the same with or without a
+     * keyboard; an open keyboard only pushes the bubble up when it would cover it.
+     */
     private fun computePosition(lp: WindowManager.LayoutParams) {
         val bounds = windowManager.currentWindowMetrics.bounds
         val windowSize = windowSizePx()
         // Physical sides: START/END would flip in RTL locales and break the drag maths.
         lp.gravity = Gravity.TOP or if (ui.dockedRight) Gravity.RIGHT else Gravity.LEFT
         lp.x = dp(EDGE_MARGIN_DP)
+        val maxY = (bounds.height() - windowSize).coerceAtLeast(0)
+        var y = prefs().getInt(PREF_Y, (bounds.height() * DEFAULT_Y_FRACTION).toInt()).coerceIn(0, maxY)
         val kbTop = keyboardTop
-        lp.y = if (kbTop != null) {
-            kbTop - windowSize - prefs().getInt(PREF_LIFT, dp(DEFAULT_LIFT_DP))
-        } else {
-            prefs().getInt(PREF_FREE_Y, (bounds.height() * 0.45f).toInt())
-        }
-        lp.y = lp.y.coerceIn(0, (bounds.height() - windowSize).coerceAtLeast(0))
+        if (kbTop != null) y = minOf(y, kbTop - windowSize - dp(KEYBOARD_GAP_DP))
+        lp.y = y.coerceIn(0, maxY)
     }
 
     private fun moveBy(dx: Int, dy: Int) {
@@ -268,6 +311,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (!attached) return
         if (!dragging) {
             dragging = true
+            moveAnimator?.cancel()
             // Switch to absolute left-based coordinates for the drag.
             val width = windowManager.currentWindowMetrics.bounds.width()
             val v = view ?: return
@@ -280,7 +324,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         windowManager.updateViewLayout(view, lp)
     }
 
-    /** Snaps to the nearer side and remembers the side and the height above the keyboard. */
+    /** Snaps to the nearer side and remembers the side and the height. */
     private fun dropBubble() {
         val lp = params ?: return
         val v = view ?: return
@@ -288,13 +332,10 @@ class BubbleAccessibilityService : AccessibilityService() {
         val width = windowManager.currentWindowMetrics.bounds.width()
         ui.dockedRight = lp.x + v.width / 2 >= width / 2
         val editor = prefs().edit().putBoolean(PREF_RIGHT, ui.dockedRight)
+        // One position for both states; a drop onto the keyboard lands just above it.
         val kbTop = keyboardTop
-        if (kbTop != null) {
-            // Never over the keys: at least flush with the keyboard's top edge.
-            editor.putInt(PREF_LIFT, (kbTop - windowSizePx() - lp.y).coerceAtLeast(0))
-        } else {
-            editor.putInt(PREF_FREE_Y, lp.y)
-        }
+        val y = if (kbTop != null) minOf(lp.y, kbTop - windowSizePx() - dp(KEYBOARD_GAP_DP)) else lp.y
+        editor.putInt(PREF_Y, y.coerceAtLeast(0))
         editor.apply()
         v.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
         computePosition(lp)
