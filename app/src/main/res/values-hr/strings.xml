@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Zatvori izbornik</string>
     <string name="bubble_hide">Sakrij za ovo polje</string>
     <string name="bubble_hidden_toast">Mjehurić skriven dok ne dodirnete drugo tekstno polje</string>
+    <string name="bubble_pause">Pauziraj oblačić</string>
+    <string name="bubble_pause_shorter">Kraće</string>
+    <string name="bubble_pause_longer">Dulje</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">Pauziraj %1$d minuta</string>
+    <string name="bubble_paused_toast">Oblačić pauziran na %1$d minuta</string>
     <string name="bubble_stop_dictation">Zaustavi diktiranje</string>
     <string name="bubble_model_loading">Učitavanje govornog modela</string>
     <string name="bubble_transcribing">Prepisivanje</string>

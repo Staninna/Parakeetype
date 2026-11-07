@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Zavrieť ponuku</string>
     <string name="bubble_hide">Skryť pre toto pole</string>
     <string name="bubble_hidden_toast">Bublina skrytá, kým neklepnete na iné textové pole</string>
+    <string name="bubble_pause">Pozastaviť bublinu</string>
+    <string name="bubble_pause_shorter">Kratšie</string>
+    <string name="bubble_pause_longer">Dlhšie</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">Pozastaviť na %1$d minút</string>
+    <string name="bubble_paused_toast">Bublina pozastavená na %1$d minút</string>
     <string name="bubble_stop_dictation">Zastaviť diktovanie</string>
     <string name="bubble_model_loading">Načítava sa model reči</string>
     <string name="bubble_transcribing">Prepisuje sa</string>

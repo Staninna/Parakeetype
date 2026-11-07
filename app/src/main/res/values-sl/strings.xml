@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Zapri meni</string>
     <string name="bubble_hide">Skrij za to polje</string>
     <string name="bubble_hidden_toast">Mehurček skrit, dokler ne tapnete drugega besedilnega polja</string>
+    <string name="bubble_pause">Začasno skrij oblaček</string>
+    <string name="bubble_pause_shorter">Krajše</string>
+    <string name="bubble_pause_longer">Dlje</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">Premor za %1$d minut</string>
+    <string name="bubble_paused_toast">Oblaček začasno skrit za %1$d minut</string>
     <string name="bubble_stop_dictation">Ustavi narekovanje</string>
     <string name="bubble_model_loading">Nalaganje govornega modela</string>
     <string name="bubble_transcribing">Prepisovanje</string>

@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Закрити меню</string>
     <string name="bubble_hide">Сховати для цього поля</string>
     <string name="bubble_hidden_toast">Кнопку сховано, доки ви не торкнетеся іншого текстового поля</string>
+    <string name="bubble_pause">Призупинити бульбашку</string>
+    <string name="bubble_pause_shorter">Коротше</string>
+    <string name="bubble_pause_longer">Довше</string>
+    <string name="bubble_pause_minutes">%1$d хв</string>
+    <string name="bubble_pause_start">Пауза на %1$d хв</string>
+    <string name="bubble_paused_toast">Бульбашку призупинено на %1$d хв</string>
     <string name="bubble_stop_dictation">Зупинити диктування</string>
     <string name="bubble_model_loading">Завантаження мовленнєвої моделі</string>
     <string name="bubble_transcribing">Розшифрування</string>

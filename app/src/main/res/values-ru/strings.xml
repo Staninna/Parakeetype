@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Закрыть меню</string>
     <string name="bubble_hide">Скрыть для этого поля</string>
     <string name="bubble_hidden_toast">Кнопка скрыта, пока вы не коснётесь другого текстового поля</string>
+    <string name="bubble_pause">Приостановить пузырёк</string>
+    <string name="bubble_pause_shorter">Короче</string>
+    <string name="bubble_pause_longer">Дольше</string>
+    <string name="bubble_pause_minutes">%1$d мин</string>
+    <string name="bubble_pause_start">Пауза на %1$d мин</string>
+    <string name="bubble_paused_toast">Пузырёк приостановлен на %1$d мин</string>
     <string name="bubble_stop_dictation">Остановить диктовку</string>
     <string name="bubble_model_loading">Загрузка речевой модели</string>
     <string name="bubble_transcribing">Расшифровка</string>

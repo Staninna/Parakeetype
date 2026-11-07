@@ -252,6 +252,12 @@
     <string name="bubble_close_menu">Menü schließen</string>
     <string name="bubble_hide">Für dieses Feld ausblenden</string>
     <string name="bubble_hidden_toast">Blase ausgeblendet, bis du auf ein anderes Textfeld tippst</string>
+    <string name="bubble_pause">Blase pausieren</string>
+    <string name="bubble_pause_shorter">Kürzer</string>
+    <string name="bubble_pause_longer">Länger</string>
+    <string name="bubble_pause_minutes">%1$d Min.</string>
+    <string name="bubble_pause_start">%1$d Minuten pausieren</string>
+    <string name="bubble_paused_toast">Blase für %1$d Minuten pausiert</string>
     <string name="bubble_stop_dictation">Diktat stoppen</string>
     <string name="bubble_model_loading">Sprachmodell wird geladen</string>
     <string name="bubble_transcribing">Wird transkribiert</string>

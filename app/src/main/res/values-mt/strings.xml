@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Agħlaq il-menu</string>
     <string name="bubble_hide">Aħbi għal dan il-qasam</string>
     <string name="bubble_hidden_toast">Il-bużżieqa moħbija sakemm tagħfas qasam tat-test ieħor</string>
+    <string name="bubble_pause">Waqqaf il-bużżieqa</string>
+    <string name="bubble_pause_shorter">Iqsar</string>
+    <string name="bubble_pause_longer">Itwal</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">Waqqaf għal %1$d minuta</string>
+    <string name="bubble_paused_toast">Il-bużżieqa waqfet għal %1$d minuta</string>
     <string name="bubble_stop_dictation">Waqqaf id-dettat</string>
     <string name="bubble_model_loading">Qed jitgħabba l-mudell tad-diskors</string>
     <string name="bubble_transcribing">Qed jiġi traskritt</string>

@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Luk menuen</string>
     <string name="bubble_hide">Skjul for dette felt</string>
     <string name="bubble_hidden_toast">Boble skjult, indtil du trykker på et andet tekstfelt</string>
+    <string name="bubble_pause">Sæt boblen på pause</string>
+    <string name="bubble_pause_shorter">Kortere</string>
+    <string name="bubble_pause_longer">Længere</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">Pause i %1$d minutter</string>
+    <string name="bubble_paused_toast">Boblen er sat på pause i %1$d minutter</string>
     <string name="bubble_stop_dictation">Stop diktering</string>
     <string name="bubble_model_loading">Indlæser talemodellen</string>
     <string name="bubble_transcribing">Transskriberer</string>

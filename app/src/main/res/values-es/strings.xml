@@ -227,6 +227,12 @@
     <string name="bubble_close_menu">Cerrar menú</string>
     <string name="bubble_hide">Ocultar para este campo</string>
     <string name="bubble_hidden_toast">Burbuja oculta hasta que toques otro campo de texto</string>
+    <string name="bubble_pause">Pausar la burbuja</string>
+    <string name="bubble_pause_shorter">Menos</string>
+    <string name="bubble_pause_longer">Más</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">Pausar %1$d minutos</string>
+    <string name="bubble_paused_toast">Burbuja en pausa durante %1$d minutos</string>
     <string name="bubble_stop_dictation">Detener dictado</string>
     <string name="bubble_model_loading">Cargando el modelo de voz</string>
     <string name="bubble_transcribing">Transcribiendo</string>

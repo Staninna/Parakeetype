@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Stäng menyn</string>
     <string name="bubble_hide">Dölj för det här fältet</string>
     <string name="bubble_hidden_toast">Bubblan är dold tills du trycker på ett annat textfält</string>
+    <string name="bubble_pause">Pausa bubblan</string>
+    <string name="bubble_pause_shorter">Kortare</string>
+    <string name="bubble_pause_longer">Längre</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">Pausa i %1$d minuter</string>
+    <string name="bubble_paused_toast">Bubblan pausad i %1$d minuter</string>
     <string name="bubble_stop_dictation">Stoppa diktering</string>
     <string name="bubble_model_loading">Läser in talmodellen</string>
     <string name="bubble_transcribing">Transkriberar</string>

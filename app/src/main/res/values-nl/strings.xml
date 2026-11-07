@@ -226,6 +226,12 @@
     <string name="bubble_close_menu">Menu sluiten</string>
     <string name="bubble_hide">Verbergen voor dit veld</string>
     <string name="bubble_hidden_toast">Bubbel verborgen tot je op een ander tekstveld tikt</string>
+    <string name="bubble_pause">Bubbel pauzeren</string>
+    <string name="bubble_pause_shorter">Korter</string>
+    <string name="bubble_pause_longer">Langer</string>
+    <string name="bubble_pause_minutes">%1$d min</string>
+    <string name="bubble_pause_start">%1$d minuten pauzeren</string>
+    <string name="bubble_paused_toast">Bubbel %1$d minuten gepauzeerd</string>
     <string name="bubble_stop_dictation">Dicteren stoppen</string>
     <string name="bubble_model_loading">Spraakmodel wordt geladen</string>
     <string name="bubble_transcribing">Bezig met uitschrijven</string>

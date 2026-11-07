@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.SystemClock
 import android.os.Handler
 import android.os.Looper
 import android.speech.SpeechRecognizer
@@ -47,6 +48,11 @@ private const val PREF_RIGHT = "docked_right"
 /** Legacy: the old keyboard-relative height, replaced by the single [PREF_Y]. */
 private const val PREF_LIFT_LEGACY = "lift_px"
 private const val PREF_Y = "free_y"
+private const val PREF_PAUSE_MINUTES = "pause_minutes"
+
+/** The pause lengths the pause pill's − / + step through, in minutes. */
+private val PAUSE_STEPS = listOf(5, 10, 15, 30, 45, 60, 90, 120)
+private const val DEFAULT_PAUSE_MINUTES = 10
 
 private const val EDGE_MARGIN_DP = 4
 
@@ -85,7 +91,14 @@ class BubbleAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = Runnable { updateBubble() }
     private val hideQuickActionRunnable = Runnable { ui.quickAction = null }
-    private val closeMenuRunnable = Runnable { ui.menuOpen = false }
+    private val closeMenuRunnable = Runnable { closeMenu() }
+    private val resumeRunnable = Runnable {
+        pausedUntil = 0L
+        updateBubble()
+    }
+
+    /** While [SystemClock.elapsedRealtime] is before this, the bubble is paused (hidden everywhere). */
+    private var pausedUntil = 0L
 
     private lateinit var windowManager: WindowManager
     private lateinit var inference: InferenceConnection
@@ -126,6 +139,8 @@ class BubbleAccessibilityService : AccessibilityService() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         inference = InferenceConnection(this)
         ui.dockedRight = prefs().getBoolean(PREF_RIGHT, true)
+        ui.pauseMinutes = prefs().getInt(PREF_PAUSE_MINUTES, DEFAULT_PAUSE_MINUTES)
+            .takeIf { it in PAUSE_STEPS } ?: DEFAULT_PAUSE_MINUTES
         prefs().edit().remove(PREF_LIFT_LEGACY).apply()
         scope.launch {
             AppPreferences(applicationContext).keepModelLoaded.collect {
@@ -171,7 +186,8 @@ class BubbleAccessibilityService : AccessibilityService() {
         // Show on any focused field, also when no keyboard is up (e.g. after Back dismissed it);
         // without a keyboard the bubble sits at its remembered free height.
         if (field == null || field != hiddenFor) hiddenFor = null
-        val show = field != null && !keyboard.isOwn && hiddenFor == null
+        val paused = SystemClock.elapsedRealtime() < pausedUntil
+        val show = field != null && !keyboard.isOwn && hiddenFor == null && !paused
         updateActions(field)
         if (show) showBubble() else hideBubble()
     }
@@ -220,6 +236,41 @@ class BubbleAccessibilityService : AccessibilityService() {
     private fun closeMenu() {
         handler.removeCallbacks(closeMenuRunnable)
         ui.menuOpen = false
+        ui.pausePickerOpen = false
+    }
+
+    /** Keeps an open menu up for another [MENU_TIMEOUT_MS] after an interaction. */
+    private fun restartMenuTimeout() {
+        handler.removeCallbacks(closeMenuRunnable)
+        if (ui.menuOpen) handler.postDelayed(closeMenuRunnable, MENU_TIMEOUT_MS)
+    }
+
+    /** − / + on the pause pill: the next shorter / longer length, remembered for next time. */
+    private fun onPauseStep(direction: Int) {
+        val index = PAUSE_STEPS.indexOf(ui.pauseMinutes).coerceAtLeast(0)
+        val next = PAUSE_STEPS[(index + direction).coerceIn(0, PAUSE_STEPS.lastIndex)]
+        if (next == ui.pauseMinutes) {
+            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+        } else {
+            ui.pauseMinutes = next
+            prefs().edit().putInt(PREF_PAUSE_MINUTES, next).apply()
+            view?.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+        restartMenuTimeout()
+    }
+
+    /** Hides the bubble everywhere for the chosen length; it comes back on its own. */
+    private fun onPauseStart() {
+        val minutes = ui.pauseMinutes
+        closeMenu()
+        hideQuickAction()
+        val ms = minutes * 60_000L
+        pausedUntil = SystemClock.elapsedRealtime() + ms
+        handler.removeCallbacks(resumeRunnable)
+        handler.postDelayed(resumeRunnable, ms)
+        view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        Toast.makeText(this, getString(R.string.bubble_paused_toast, minutes), Toast.LENGTH_SHORT).show()
+        hideBubble()
     }
 
     /** A tap on the idle mic: closes an open menu, otherwise starts dictating. */
@@ -242,13 +293,19 @@ class BubbleAccessibilityService : AccessibilityService() {
             hideForField()
             return
         }
+        if (action == BubbleAction.Pause) {
+            // Opens (or closes) the pause pill under the menu.
+            ui.pausePickerOpen = !ui.pausePickerOpen
+            restartMenuTimeout()
+            return
+        }
         val fromMenu = ui.menuOpen
         hideQuickAction()
         val done = when (action) {
             BubbleAction.Undo -> undo()
             BubbleAction.Redo -> redo()
             BubbleAction.Reinsert -> reinsert()
-            BubbleAction.Hide -> false
+            BubbleAction.Pause, BubbleAction.Hide -> false
         }
         if (fromMenu) {
             // undo / redo / reinsert refreshed the availability (and closed an empty menu).
@@ -262,7 +319,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         when (action) {
             BubbleAction.Undo -> if (ui.canRedo) showQuickAction(BubbleAction.Redo)
             BubbleAction.Redo, BubbleAction.Reinsert -> if (ui.canUndo) showQuickAction(BubbleAction.Undo)
-            BubbleAction.Hide -> Unit
+            BubbleAction.Pause, BubbleAction.Hide -> Unit
         }
     }
 
@@ -328,6 +385,8 @@ class BubbleAccessibilityService : AccessibilityService() {
                         onCancel = ::cancelDictation,
                         onMenu = ::openMenu,
                         onAction = ::onAction,
+                        onPauseStep = ::onPauseStep,
+                        onPauseStart = ::onPauseStart,
                     )
                 }
             }.also {
