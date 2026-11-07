@@ -231,13 +231,31 @@ class BubbleAccessibilityService : AccessibilityService() {
         startDictation()
     }
 
+    /**
+     * Runs [action]. From the menu, the menu stays open (the user may want to undo more) with
+     * its timeout restarted, now listing what is usable after the action; it closes once
+     * nothing is. From the quick action, the follow-up (Redo after Undo …) is offered briefly.
+     */
     private fun onAction(action: BubbleAction) {
-        closeMenu()
+        val fromMenu = ui.menuOpen
         hideQuickAction()
+        val done = when (action) {
+            BubbleAction.Undo -> undo()
+            BubbleAction.Redo -> redo()
+            BubbleAction.Reinsert -> reinsert()
+        }
+        if (fromMenu) {
+            // undo / redo / reinsert refreshed the availability (and closed an empty menu).
+            if (ui.menuOpen) {
+                handler.removeCallbacks(closeMenuRunnable)
+                handler.postDelayed(closeMenuRunnable, MENU_TIMEOUT_MS)
+            }
+            return
+        }
+        if (!done) return
         when (action) {
-            BubbleAction.Undo -> if (undo() && ui.canRedo) showQuickAction(BubbleAction.Redo)
-            BubbleAction.Redo -> if (redo() && ui.canUndo) showQuickAction(BubbleAction.Undo)
-            BubbleAction.Reinsert -> if (reinsert() && ui.canUndo) showQuickAction(BubbleAction.Undo)
+            BubbleAction.Undo -> if (ui.canRedo) showQuickAction(BubbleAction.Redo)
+            BubbleAction.Redo, BubbleAction.Reinsert -> if (ui.canUndo) showQuickAction(BubbleAction.Undo)
         }
     }
 
