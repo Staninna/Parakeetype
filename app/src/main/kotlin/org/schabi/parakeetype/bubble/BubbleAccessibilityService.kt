@@ -67,8 +67,11 @@ private const val MOVE_ANIMATION_MS = 180L
 /** How long Undo (after a dictation) or Redo (after an undo) stays beside the mic. */
 private const val QUICK_ACTION_MS = 4_000L
 
-/** The long-press menu closes on its own after this long. */
-private const val MENU_TIMEOUT_MS = 5_000L
+/** The long-press menu closes on its own after this long without a touch. */
+private const val MENU_TIMEOUT_MS = 10_000L
+
+/** How long the menu card's fade-out runs before its window goes. */
+private const val MENU_EXIT_MS = 170L
 
 /**
  * Shows a floating microphone bubble on focused text fields while another keyboard is in use,
@@ -92,6 +95,12 @@ class BubbleAccessibilityService : AccessibilityService() {
     private val updateRunnable = Runnable { updateBubble() }
     private val hideQuickActionRunnable = Runnable { ui.quickAction = null }
     private val closeMenuRunnable = Runnable { closeMenu() }
+    private val removeMenuRunnable = Runnable { if (!ui.menuOpen) removeMenuWindow() }
+
+    /** The long-press menu's own overlay window (so the mic's window never resizes for it). */
+    private var menuView: OutsideTouchComposeView? = null
+    private var menuParams: WindowManager.LayoutParams? = null
+    private var menuAttached = false
     private val resumeRunnable = Runnable {
         pausedUntil = 0L
         updateBubble()
@@ -222,21 +231,106 @@ class BubbleAccessibilityService : AccessibilityService() {
         ui.quickAction = null
     }
 
-    /** Long-press on the idle mic: every usable action (at least Hide). */
+    /** Long-press on the idle mic: every usable action (at least pause and hide). */
     private fun openMenu() {
-        if (session != null) return
+        if (session != null || !attached) return
         updateActions(findEditableFocus())
         view?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         hideQuickAction()
         ui.menuOpen = true
-        handler.removeCallbacks(closeMenuRunnable)
-        handler.postDelayed(closeMenuRunnable, MENU_TIMEOUT_MS)
+        showMenuWindow()
+        restartMenuTimeout()
     }
 
+    /** Fades the card out, then removes its window. */
     private fun closeMenu() {
         handler.removeCallbacks(closeMenuRunnable)
+        if (!ui.menuOpen) return
         ui.menuOpen = false
-        ui.pausePickerOpen = false
+        ui.menuShown = false
+        handler.removeCallbacks(removeMenuRunnable)
+        handler.postDelayed(removeMenuRunnable, MENU_EXIT_MS)
+    }
+
+    /**
+     * Adds the menu window, invisible: once it is laid out (and on every later size change,
+     * e.g. a row appearing) it is placed next to the mic, and only then is the card shown.
+     */
+    private fun showMenuWindow() {
+        handler.removeCallbacks(removeMenuRunnable)
+        if (menuAttached) {
+            placeMenu()
+            ui.menuShown = true
+            return
+        }
+        val v = menuView ?: OutsideTouchComposeView(this, onOutside = ::closeMenu) {
+            ParakeetypeKeyboardTheme {
+                BubbleMenu(
+                    state = ui,
+                    onAction = ::onAction,
+                    onPauseStep = ::onPauseStep,
+                    onPauseStart = ::onPauseStart,
+                )
+            }
+        }.also {
+            owner.attachTo(it)
+            it.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+                if (bottom - top != oldBottom - oldTop) placeMenu()
+                if (ui.menuOpen && !ui.menuShown) ui.menuShown = true
+            }
+            menuView = it
+        }
+        val lp = menuParams ?: WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    // A tap anywhere else closes the menu.
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+            PixelFormat.TRANSLUCENT,
+        ).also { menuParams = it }
+        computeMenuPosition(lp, menuHeight = 0)
+        try {
+            windowManager.addView(v, lp)
+            menuAttached = true
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not add the bubble menu", e)
+            ui.menuOpen = false
+        }
+    }
+
+    /** Puts the menu right above the mic (below it when there is no room), on the mic's side. */
+    private fun placeMenu() {
+        val lp = menuParams ?: return
+        if (!menuAttached) return
+        computeMenuPosition(lp, menuHeight = menuView?.height ?: 0)
+        windowManager.updateViewLayout(menuView, lp)
+    }
+
+    private fun computeMenuPosition(lp: WindowManager.LayoutParams, menuHeight: Int) {
+        val mic = params ?: return
+        val micHeight = view?.height?.takeIf { it > 0 } ?: windowSizePx()
+        // Both windows carry shadow padding; overlap it so the card sits close to the mic.
+        val overlap = dp(BUBBLE_WINDOW_PADDING.value.toInt())
+        lp.gravity = Gravity.TOP or if (ui.dockedRight) Gravity.RIGHT else Gravity.LEFT
+        lp.x = dp(EDGE_MARGIN_DP)
+        val above = mic.y - menuHeight + overlap
+        ui.menuAbove = above >= 0
+        lp.y = if (ui.menuAbove) above else mic.y + micHeight - overlap
+    }
+
+    private fun removeMenuWindow() {
+        handler.removeCallbacks(removeMenuRunnable)
+        val v = menuView ?: return
+        if (!menuAttached) return
+        try {
+            windowManager.removeView(v)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not remove the bubble menu", e)
+        }
+        menuAttached = false
     }
 
     /** Keeps an open menu up for another [MENU_TIMEOUT_MS] after an interaction. */
@@ -245,16 +339,16 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (ui.menuOpen) handler.postDelayed(closeMenuRunnable, MENU_TIMEOUT_MS)
     }
 
-    /** − / + on the pause pill: the next shorter / longer length, remembered for next time. */
+    /** − / + on the menu's pause row: the next shorter / longer length, remembered for next time. */
     private fun onPauseStep(direction: Int) {
         val index = PAUSE_STEPS.indexOf(ui.pauseMinutes).coerceAtLeast(0)
         val next = PAUSE_STEPS[(index + direction).coerceIn(0, PAUSE_STEPS.lastIndex)]
         if (next == ui.pauseMinutes) {
-            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+            menuView?.performHapticFeedback(HapticFeedbackConstants.REJECT)
         } else {
             ui.pauseMinutes = next
             prefs().edit().putInt(PREF_PAUSE_MINUTES, next).apply()
-            view?.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            menuView?.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         }
         restartMenuTimeout()
     }
@@ -293,33 +387,24 @@ class BubbleAccessibilityService : AccessibilityService() {
             hideForField()
             return
         }
-        if (action == BubbleAction.Pause) {
-            // Opens (or closes) the pause pill under the menu.
-            ui.pausePickerOpen = !ui.pausePickerOpen
-            restartMenuTimeout()
-            return
-        }
         val fromMenu = ui.menuOpen
         hideQuickAction()
         val done = when (action) {
             BubbleAction.Undo -> undo()
             BubbleAction.Redo -> redo()
             BubbleAction.Reinsert -> reinsert()
-            BubbleAction.Pause, BubbleAction.Hide -> false
+            BubbleAction.Hide -> false
         }
         if (fromMenu) {
             // undo / redo / reinsert refreshed the availability (and closed an empty menu).
-            if (ui.menuOpen) {
-                handler.removeCallbacks(closeMenuRunnable)
-                handler.postDelayed(closeMenuRunnable, MENU_TIMEOUT_MS)
-            }
+            restartMenuTimeout()
             return
         }
         if (!done) return
         when (action) {
             BubbleAction.Undo -> if (ui.canRedo) showQuickAction(BubbleAction.Redo)
             BubbleAction.Redo, BubbleAction.Reinsert -> if (ui.canUndo) showQuickAction(BubbleAction.Undo)
-            BubbleAction.Pause, BubbleAction.Hide -> Unit
+            BubbleAction.Hide -> Unit
         }
     }
 
@@ -425,6 +510,10 @@ class BubbleAccessibilityService : AccessibilityService() {
 
     private fun removeBubble() {
         moveAnimator?.cancel()
+        ui.menuOpen = false
+        ui.menuShown = false
+        handler.removeCallbacks(closeMenuRunnable)
+        removeMenuWindow()
         val v = view ?: return
         if (!attached) return
         try {
@@ -498,6 +587,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (!attached) return
         if (!dragging) {
             dragging = true
+            closeMenu()
             moveAnimator?.cancel()
             // Switch to absolute left-based coordinates for the drag.
             val width = windowManager.currentWindowMetrics.bounds.width()

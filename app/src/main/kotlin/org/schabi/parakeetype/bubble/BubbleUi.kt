@@ -3,6 +3,15 @@
 package org.schabi.parakeetype.bubble
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ContentTransform
@@ -16,10 +25,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,7 +48,6 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -78,7 +82,7 @@ import org.schabi.parakeetype.R
 enum class BubblePhase { Idle, Listening, Finishing }
 
 /** The actions offered beside the idle mic. */
-enum class BubbleAction { Undo, Redo, Reinsert, Pause, Hide }
+enum class BubbleAction { Undo, Redo, Reinsert, Hide }
 
 private const val BAR_COUNT = 18
 
@@ -102,11 +106,19 @@ class BubbleUiState {
     /** The one action offered briefly beside the mic (Undo after a dictation, Redo after an undo). */
     var quickAction by mutableStateOf<BubbleAction?>(null)
 
-    /** The long-press menu (every usable action) is open. */
+    /** The long-press menu is open (its window is up; the mic shows a close icon). */
     var menuOpen by mutableStateOf(false)
 
-    /** The pause pill (under the menu) is open, and the pause length it offers. */
-    var pausePickerOpen by mutableStateOf(false)
+    /**
+     * The menu card is shown: set once its window is laid out and placed, cleared before the
+     * window goes, so the card fades / scales in and out without resizing any window.
+     */
+    var menuShown by mutableStateOf(false)
+
+    /** The menu card sits above the mic (else below, when there is no room above). */
+    var menuAbove by mutableStateOf(true)
+
+    /** The pause length the menu's pause row offers. */
     var pauseMinutes by mutableStateOf(10)
 
     /** Recent microphone levels, oldest first, each 0..1. */
@@ -128,10 +140,10 @@ val BUBBLE_SIZE = 56.dp
 
 /**
  * The overlay content: a round microphone button while idle, which grows into a recording pill
- * (cancel · live waveform · done) while dictating. While idle, the mic is all there is, except:
- * right after a dictation (or an undo) one small Undo (or Redo) button shows beside it for a few
- * seconds ([BubbleUiState.quickAction]), and a long-press opens a pill with every usable action
- * (undo · redo · re-insert, and hide for this field, [BubbleUiState.menuOpen]). Both sit on the screen side of the mic.
+ * (cancel · live waveform · done) while dictating. While idle, the mic is all there is, except
+ * right after a dictation (or an undo): one small Undo (or Redo) button then shows beside it, on
+ * the screen side, for a few seconds ([BubbleUiState.quickAction]). A long-press opens the menu
+ * ([BubbleMenu], its own window) and turns the mic into a close icon.
  */
 @Composable
 fun BubbleContent(
@@ -141,8 +153,6 @@ fun BubbleContent(
     onCancel: () -> Unit,
     onMenu: () -> Unit = {},
     onAction: (BubbleAction) -> Unit = {},
-    onPauseStep: (Int) -> Unit = {},
-    onPauseStart: () -> Unit = {},
 ) {
     Box(Modifier.padding(BUBBLE_WINDOW_PADDING)) {
         AnimatedContent(
@@ -160,7 +170,7 @@ fun BubbleContent(
             label = "bubble",
         ) { idle ->
             if (idle) {
-                IdleBubble(state, onStart, onMenu, onAction, onPauseStep, onPauseStart)
+                IdleBubble(state, onStart, onMenu, onAction)
             } else {
                 RecordingPill(state = state, onFinish = onFinish, onCancel = onCancel)
             }
@@ -174,146 +184,169 @@ private fun IdleBubble(
     onStart: () -> Unit,
     onMenu: () -> Unit,
     onAction: (BubbleAction) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Absolute.spacedBy(8.dp),
+    ) {
+        // Fades / scales in place: the window resizes once when it appears and once when it is
+        // gone, never per frame.
+        val quick: @Composable () -> Unit = {
+            AnimatedVisibility(
+                visible = state.quickAction != null && !state.menuOpen,
+                enter = fadeIn(tween(150)) + scaleIn(tween(150), initialScale = 0.6f),
+                exit = fadeOut(tween(120)) + scaleOut(tween(120), targetScale = 0.6f),
+            ) {
+                // Keep the last action while fading out.
+                val shown = remember { arrayOf(BubbleAction.Undo) }
+                state.quickAction?.let { shown[0] = it }
+                val (icon, label) = actionIconAndLabel(shown[0])
+                ActionBubble(icon, label) { onAction(shown[0]) }
+            }
+        }
+        if (state.dockedRight) {
+            quick()
+            MicButton(menuOpen = state.menuOpen, onStart = onStart, onMenu = onMenu)
+        } else {
+            MicButton(menuOpen = state.menuOpen, onStart = onStart, onMenu = onMenu)
+            quick()
+        }
+    }
+}
+
+@Composable
+private fun actionIconAndLabel(action: BubbleAction): Pair<ImageVector, String> = when (action) {
+    BubbleAction.Undo -> Icons.AutoMirrored.Rounded.Undo to stringResource(R.string.cd_undo_dictation)
+    BubbleAction.Redo -> Icons.AutoMirrored.Rounded.Redo to stringResource(R.string.cd_redo_dictation)
+    BubbleAction.Reinsert -> Icons.Rounded.History to stringResource(R.string.cd_reinsert_transcript)
+    BubbleAction.Hide -> Icons.Rounded.VisibilityOff to stringResource(R.string.bubble_hide)
+}
+
+/**
+ * The long-press menu: a card with one row per action (icon + label) — undo, redo and insert
+ * again while usable, then pause (with − / + for its length; the row starts it) and hide here.
+ * Lives in its own overlay window next to the mic; it fades and scales in from the mic's corner
+ * once [BubbleUiState.menuShown] is set, with a fixed layout size so no window resizes.
+ */
+@Composable
+fun BubbleMenu(
+    state: BubbleUiState,
+    onAction: (BubbleAction) -> Unit,
     onPauseStep: (Int) -> Unit,
     onPauseStart: () -> Unit,
 ) {
-    // The menu lists every usable action; otherwise only the brief quick action, if any.
-    val actions = when {
-        state.menuOpen -> buildList {
-            if (state.canUndo) add(BubbleAction.Undo)
-            if (state.canRedo) add(BubbleAction.Redo)
-            if (state.canReinsert) add(BubbleAction.Reinsert)
-            add(BubbleAction.Pause)
-            add(BubbleAction.Hide)
-        }
-        else -> listOfNotNull(state.quickAction)
-    }
-    Column(
-        horizontalAlignment = if (state.dockedRight) AbsoluteAlignment.Right else AbsoluteAlignment.Left,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Absolute.spacedBy(8.dp),
-        ) {
-            // The mic stays at the docked edge; the actions go on the screen side, listed from the
-            // mic outwards.
-            val side: @Composable () -> Unit = {
-                AnimatedVisibility(
-                    visible = actions.isNotEmpty(),
-                    enter = fadeIn(tween(150)) + expandHorizontally(tween(180)),
-                    exit = fadeOut(tween(150)) + shrinkHorizontally(tween(180)),
-                ) {
-                    // Keep the last shown actions while fading out.
-                    val shown = remember { arrayOf(actions) }
-                    if (actions.isNotEmpty()) shown[0] = actions
-                    ActionGroup(
-                        actions = if (state.dockedRight) shown[0].asReversed() else shown[0],
-                        asMenu = state.menuOpen,
-                        onAction = onAction,
-                    )
-                }
-            }
-            if (state.dockedRight) {
-                side()
-                MicButton(menuOpen = state.menuOpen, onStart = onStart, onMenu = onMenu)
-            } else {
-                MicButton(menuOpen = state.menuOpen, onStart = onStart, onMenu = onMenu)
-                side()
-            }
-        }
-        // A separate pill under the menu: the pause length (− / +) and start.
-        AnimatedVisibility(
-            visible = state.menuOpen && state.pausePickerOpen,
-            enter = fadeIn(tween(150)) + expandVertically(tween(180)),
-            exit = fadeOut(tween(150)) + shrinkVertically(tween(180)),
-        ) {
-            PausePill(state, onPauseStep, onPauseStart)
-        }
-    }
-}
-
-/** − · length · + · start, the start button on the docked side (under the mic). */
-@Composable
-private fun PausePill(state: BubbleUiState, onPauseStep: (Int) -> Unit, onPauseStart: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(percent = 50),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shadowElevation = 6.dp,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Absolute.spacedBy(4.dp),
-            modifier = Modifier.padding(4.dp),
-        ) {
-            val start: @Composable () -> Unit = {
-                ActionBubble(
-                    Icons.Rounded.PlayArrow,
-                    stringResource(R.string.bubble_pause_start, state.pauseMinutes),
-                    floating = false,
-                    onClick = onPauseStart,
-                )
-            }
-            if (!state.dockedRight) start()
-            ActionBubble(Icons.Rounded.Remove, stringResource(R.string.bubble_pause_shorter), floating = false) {
-                onPauseStep(-1)
-            }
-            Text(
-                text = stringResource(R.string.bubble_pause_minutes, state.pauseMinutes),
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
-            ActionBubble(Icons.Rounded.Add, stringResource(R.string.bubble_pause_longer), floating = false) {
-                onPauseStep(1)
-            }
-            if (state.dockedRight) start()
-        }
-    }
-}
-
-/** The actions in a row: a single floating button, or (the menu) together on one pill. */
-@Composable
-private fun ActionGroup(actions: List<BubbleAction>, asMenu: Boolean, onAction: (BubbleAction) -> Unit) {
-    val row: @Composable () -> Unit = {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Absolute.spacedBy(4.dp),
-            modifier = if (asMenu) Modifier.padding(4.dp) else Modifier,
-        ) {
-            actions.forEach { action ->
-                val (icon, label) = when (action) {
-                    BubbleAction.Undo -> Icons.AutoMirrored.Rounded.Undo to stringResource(R.string.cd_undo_dictation)
-                    BubbleAction.Redo -> Icons.AutoMirrored.Rounded.Redo to stringResource(R.string.cd_redo_dictation)
-                    BubbleAction.Reinsert -> Icons.Rounded.History to stringResource(R.string.cd_reinsert_transcript)
-                    BubbleAction.Pause -> Icons.Rounded.Pause to stringResource(R.string.bubble_pause)
-                    BubbleAction.Hide -> Icons.Rounded.VisibilityOff to stringResource(R.string.bubble_hide)
-                }
-                ActionBubble(icon, label, floating = !asMenu) { onAction(action) }
-            }
-        }
-    }
-    if (asMenu) {
+    val progress by animateFloatAsState(
+        targetValue = if (state.menuShown) 1f else 0f,
+        animationSpec = tween(160, easing = FastOutSlowInEasing),
+        label = "menu",
+    )
+    Box(Modifier.padding(BUBBLE_WINDOW_PADDING)) {
         Surface(
-            shape = RoundedCornerShape(percent = 50),
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             shadowElevation = 6.dp,
-        ) { row() }
-    } else {
-        row()
+            modifier = Modifier
+                .widthIn(min = 200.dp)
+                .graphicsLayer {
+                    alpha = progress
+                    val scale = 0.85f + 0.15f * progress
+                    scaleX = scale
+                    scaleY = scale
+                    // Grow out of the mic's corner.
+                    transformOrigin = TransformOrigin(
+                        pivotFractionX = if (state.dockedRight) 1f else 0f,
+                        pivotFractionY = if (state.menuAbove) 1f else 0f,
+                    )
+                },
+        ) {
+            Column(Modifier.padding(vertical = 6.dp)) {
+                if (state.canUndo) MenuRow(BubbleAction.Undo, onAction)
+                if (state.canRedo) MenuRow(BubbleAction.Redo, onAction)
+                if (state.canReinsert) MenuRow(BubbleAction.Reinsert, onAction)
+                PauseRow(state, onPauseStep, onPauseStart)
+                MenuRow(BubbleAction.Hide, onAction)
+            }
+        }
     }
 }
 
-/** A small round action button: floating on its own, or flat inside the menu pill. */
 @Composable
-private fun ActionBubble(icon: ImageVector, label: String, floating: Boolean, onClick: () -> Unit) {
+private fun MenuRow(action: BubbleAction, onAction: (BubbleAction) -> Unit) {
+    val (icon, label) = actionIconAndLabel(action)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(MENU_ROW_HEIGHT)
+            .clickable(onClick = { onAction(action) })
+            .padding(horizontal = 16.dp),
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(14.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+    }
+}
+
+/** "Pause" with − length + : tapping the label part starts the pause, − / + change its length. */
+@Composable
+private fun PauseRow(state: BubbleUiState, onPauseStep: (Int) -> Unit, onPauseStart: () -> Unit) {
+    val startLabel = stringResource(R.string.bubble_pause_start, state.pauseMinutes)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().height(MENU_ROW_HEIGHT),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clickable(onClickLabel = startLabel, onClick = onPauseStart)
+                .semantics { contentDescription = startLabel }
+                .padding(start = 16.dp, end = 8.dp),
+        ) {
+            Icon(Icons.Rounded.Pause, contentDescription = null, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(14.dp))
+            Text(stringResource(R.string.bubble_pause), style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+        }
+        StepButton(Icons.Rounded.Remove, stringResource(R.string.bubble_pause_shorter)) { onPauseStep(-1) }
+        Text(
+            text = stringResource(R.string.bubble_pause_minutes, state.pauseMinutes),
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(min = 52.dp),
+        )
+        StepButton(Icons.Rounded.Add, stringResource(R.string.bubble_pause_longer)) { onPauseStep(1) }
+        Spacer(Modifier.width(8.dp))
+    }
+}
+
+@Composable
+private fun StepButton(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .clickable(onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label },
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
+    }
+}
+
+private val MENU_ROW_HEIGHT = 48.dp
+
+/** The small floating round button beside the mic (the quick Undo / Redo). */
+@Composable
+private fun ActionBubble(icon: ImageVector, label: String, onClick: () -> Unit) {
     Surface(
         shape = CircleShape,
-        color = if (floating) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent,
+        color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shadowElevation = if (floating) 4.dp else 0.dp,
+        shadowElevation = 4.dp,
         modifier = Modifier.size(ACTION_BUBBLE_SIZE),
     ) {
         Box(
