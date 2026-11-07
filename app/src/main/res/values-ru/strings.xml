@@ -222,6 +222,7 @@
     <string name="bubble_service_label">Кнопка диктовки Parakeetype</string>
     <string name="bubble_service_description">Показывает плавающую кнопку микрофона, пока открыта другая клавиатура. Коснитесь её, чтобы диктовать с помощью Parakeetype; текст вставляется в активное поле. Parakeetype использует этот доступ только для того, чтобы найти активное текстовое поле, определить, показана ли клавиатура, и вставить текст. Речь обрабатывается на этом устройстве, и ничего никуда не отправляется.</string>
     <string name="bubble_start_dictation">Начать диктовку</string>
+    <string name="bubble_more_actions">Отменить, вернуть или вставить снова</string>
     <string name="bubble_stop_dictation">Остановить диктовку</string>
     <string name="bubble_model_loading">Загрузка речевой модели</string>
     <string name="bubble_transcribing">Расшифровка</string>

@@ -222,6 +222,7 @@
     <string name="bubble_service_label">Dymek dyktowania Parakeetype</string>
     <string name="bubble_service_description">Pokazuje pływający przycisk mikrofonu, gdy otwarta jest inna klawiatura. Dotknij go, aby dyktować w Parakeetype; tekst zostanie wstawiony do aktywnego pola. Parakeetype używa tego dostępu tylko do znalezienia aktywnego pola tekstowego, sprawdzenia, czy klawiatura jest wyświetlana, i wstawienia tekstu. Mowa jest przetwarzana na tym urządzeniu i nic nie jest wysyłane.</string>
     <string name="bubble_start_dictation">Rozpocznij dyktowanie</string>
+    <string name="bubble_more_actions">Cofnij, ponów lub wstaw ponownie</string>
     <string name="bubble_stop_dictation">Zatrzymaj dyktowanie</string>
     <string name="bubble_model_loading">Wczytywanie modelu mowy</string>
     <string name="bubble_transcribing">Transkrypcja</string>

@@ -248,6 +248,7 @@
     <string name="bubble_service_label">Parakeetype-Diktierblase</string>
     <string name="bubble_service_description">Zeigt eine schwebende Mikrofon-Schaltfläche an, während eine andere Tastatur geöffnet ist. Tippe darauf, um mit Parakeetype zu diktieren; der Text wird in das aktive Feld eingefügt. Parakeetype nutzt diesen Zugriff nur, um das aktive Textfeld zu finden, zu erkennen, ob eine Tastatur angezeigt wird, und den Text einzufügen. Die Sprache wird auf diesem Gerät verarbeitet, es wird nichts gesendet.</string>
     <string name="bubble_start_dictation">Diktat starten</string>
+    <string name="bubble_more_actions">Rückgängig, wiederherstellen oder erneut einfügen</string>
     <string name="bubble_stop_dictation">Diktat stoppen</string>
     <string name="bubble_model_loading">Sprachmodell wird geladen</string>
     <string name="bubble_transcribing">Wird transkribiert</string>

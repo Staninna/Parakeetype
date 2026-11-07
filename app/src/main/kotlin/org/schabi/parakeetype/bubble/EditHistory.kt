@@ -25,9 +25,19 @@ class EditHistory(private val maxEdits: Int = MAX_EDITS) {
     val canUndo: Boolean get() = done.isNotEmpty()
     val canRedo: Boolean get() = undone.isNotEmpty()
 
-    /** A new insertion; it makes the undone edits stale, as in any editor. */
-    fun record(edit: FieldEdit) {
+    /**
+     * A new insertion; it makes the undone edits stale, as in any editor. With [mergeWithLast]
+     * it joins the previous edit when it directly continues it (the next sentence of the same
+     * dictation), so one undo removes the whole dictation.
+     */
+    fun record(edit: FieldEdit, mergeWithLast: Boolean = false) {
         undone.clear()
+        val last = done.lastOrNull()
+        if (mergeWithLast && last != null && last.after == edit.before) {
+            done.removeLastOrNull()
+            done.addLast(FieldEdit(last.before, last.beforeCursor, edit.after, edit.afterCursor))
+            return
+        }
         done.addLast(edit)
         while (done.size > maxEdits) done.removeFirstOrNull()
     }

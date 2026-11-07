@@ -222,6 +222,7 @@
     <string name="bubble_service_label">Parakeetype diktálóbuborék</string>
     <string name="bubble_service_description">Lebegő mikrofongombot jelenít meg, amíg egy másik billentyűzet van nyitva. Koppintson rá a Parakeetype-pal való diktáláshoz; a szöveg az aktív mezőbe kerül. A Parakeetype ezt a hozzáférést csak az aktív szövegmező megtalálására, annak érzékelésére, hogy látható-e billentyűzet, és a szöveg beszúrására használja. A beszéd ezen az eszközön dolgozódik fel, és semmi sem kerül elküldésre.</string>
     <string name="bubble_start_dictation">Diktálás indítása</string>
+    <string name="bubble_more_actions">Visszavonás, ismétlés vagy ismételt beszúrás</string>
     <string name="bubble_stop_dictation">Diktálás leállítása</string>
     <string name="bubble_model_loading">Beszédmodell betöltése</string>
     <string name="bubble_transcribing">Átírás folyamatban</string>

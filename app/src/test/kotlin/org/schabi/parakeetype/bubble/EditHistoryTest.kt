@@ -56,4 +56,24 @@ class EditHistoryTest {
         assertThat(history.undo("Hello world")).isEqualTo(second)
         assertThat(history.canUndo).isFalse()
     }
+
+    @Test
+    fun `sentences of one dictation merge into one undo step`() {
+        val history = EditHistory()
+        history.record(first)
+        history.record(second, mergeWithLast = true)
+
+        assertThat(history.undo("Hello world")).isEqualTo(FieldEdit("", 0, "Hello world", 11))
+        assertThat(history.canUndo).isFalse()
+    }
+
+    @Test
+    fun `an edit that does not continue the last one is not merged`() {
+        val history = EditHistory()
+        history.record(first)
+        history.record(FieldEdit("Other", 5, "Other text", 10), mergeWithLast = true)
+
+        assertThat(history.undo("Other text")).isEqualTo(FieldEdit("Other", 5, "Other text", 10))
+        assertThat(history.canUndo).isTrue()
+    }
 }

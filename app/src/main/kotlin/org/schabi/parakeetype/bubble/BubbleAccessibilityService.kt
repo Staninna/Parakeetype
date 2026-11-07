@@ -58,6 +58,12 @@ private const val DEFAULT_Y_FRACTION = 0.35f
 
 private const val MOVE_ANIMATION_MS = 180L
 
+/** How long Undo (after a dictation) or Redo (after an undo) stays beside the mic. */
+private const val QUICK_ACTION_MS = 4_000L
+
+/** The long-press menu closes on its own after this long. */
+private const val MENU_TIMEOUT_MS = 5_000L
+
 /**
  * Shows a floating microphone bubble on focused text fields while another keyboard is in use,
  * so dictation works without switching to the Parakeetype keyboard.
@@ -78,6 +84,8 @@ class BubbleAccessibilityService : AccessibilityService() {
     private val scope = MainScope()
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = Runnable { updateBubble() }
+    private val hideQuickActionRunnable = Runnable { ui.quickAction = null }
+    private val closeMenuRunnable = Runnable { ui.menuOpen = false }
 
     private lateinit var windowManager: WindowManager
     private lateinit var inference: InferenceConnection
@@ -101,6 +109,9 @@ class BubbleAccessibilityService : AccessibilityService() {
 
     /** What the running dictation session inserted so far. */
     private val sessionTranscript = StringBuilder()
+
+    /** The running session made an undoable insertion. */
+    private var sessionUndoable = false
 
     /** Top edge of the visible keyboard in screen pixels, or `null` when none is seen. */
     private var keyboardTop: Int? = null
@@ -161,12 +172,73 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (show) showBubble() else hideBubble()
     }
 
-    /** Shows undo / redo only for the field the history belongs to, re-insert for any field. */
+    /**
+     * Offers undo / redo only for the field the history belongs to, re-insert for any field;
+     * drops a quick action or an open menu that no longer applies (e.g. focus moved).
+     */
     private fun updateActions(field: AccessibilityNodeInfo?) {
         val own = field != null && field == historyField
         ui.canUndo = own && history.canUndo
         ui.canRedo = own && history.canRedo
         ui.canReinsert = field != null && lastTranscript != null
+        when (ui.quickAction) {
+            BubbleAction.Undo -> if (!ui.canUndo) ui.quickAction = null
+            BubbleAction.Redo -> if (!ui.canRedo) ui.quickAction = null
+            else -> Unit
+        }
+        if (ui.menuOpen && !ui.canUndo && !ui.canRedo && !ui.canReinsert) closeMenu()
+    }
+
+    /** Shows [action] beside the mic for [QUICK_ACTION_MS]. */
+    private fun showQuickAction(action: BubbleAction) {
+        handler.removeCallbacks(hideQuickActionRunnable)
+        ui.quickAction = action
+        handler.postDelayed(hideQuickActionRunnable, QUICK_ACTION_MS)
+    }
+
+    private fun hideQuickAction() {
+        handler.removeCallbacks(hideQuickActionRunnable)
+        ui.quickAction = null
+    }
+
+    /** Long-press on the idle mic: every usable action, or a refusal buzz when there is none. */
+    private fun openMenu() {
+        if (session != null) return
+        updateActions(findEditableFocus())
+        if (!ui.canUndo && !ui.canRedo && !ui.canReinsert) {
+            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+            return
+        }
+        view?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        hideQuickAction()
+        ui.menuOpen = true
+        handler.removeCallbacks(closeMenuRunnable)
+        handler.postDelayed(closeMenuRunnable, MENU_TIMEOUT_MS)
+    }
+
+    private fun closeMenu() {
+        handler.removeCallbacks(closeMenuRunnable)
+        ui.menuOpen = false
+    }
+
+    /** A tap on the idle mic: closes an open menu, otherwise starts dictating. */
+    private fun onMicTap() {
+        if (ui.menuOpen) {
+            closeMenu()
+            return
+        }
+        hideQuickAction()
+        startDictation()
+    }
+
+    private fun onAction(action: BubbleAction) {
+        closeMenu()
+        hideQuickAction()
+        when (action) {
+            BubbleAction.Undo -> if (undo() && ui.canRedo) showQuickAction(BubbleAction.Redo)
+            BubbleAction.Redo -> if (redo() && ui.canUndo) showQuickAction(BubbleAction.Undo)
+            BubbleAction.Reinsert -> if (reinsert() && ui.canUndo) showQuickAction(BubbleAction.Undo)
+        }
     }
 
     private class Keyboard(val top: Int?, val isOwn: Boolean)
@@ -216,12 +288,11 @@ class BubbleAccessibilityService : AccessibilityService() {
                 ParakeetypeKeyboardTheme {
                     BubbleContent(
                         state = ui,
-                        onStart = ::startDictation,
+                        onStart = ::onMicTap,
                         onFinish = ::finishDictation,
                         onCancel = ::cancelDictation,
-                        onUndo = ::undo,
-                        onRedo = ::redo,
-                        onReinsert = ::reinsert,
+                        onMenu = ::openMenu,
+                        onAction = ::onAction,
                     )
                 }
             }.also {
@@ -384,6 +455,9 @@ class BubbleAccessibilityService : AccessibilityService() {
         }
         target = field
         sessionTranscript.clear()
+        sessionUndoable = false
+        closeMenu()
+        hideQuickAction()
         // Hold the microphone foreground-service state while dictating from the bubble (see
         // InferenceService.keepLoadedServiceTypes).
         if (keepModelLoaded) InferenceService.startKeepLoaded(this)
@@ -419,12 +493,16 @@ class BubbleAccessibilityService : AccessibilityService() {
     private fun endSession() {
         if (sessionTranscript.isNotEmpty()) lastTranscript = sessionTranscript.toString()
         sessionTranscript.clear()
+        val offerUndo = sessionUndoable
+        sessionUndoable = false
         view?.keepScreenOn = false
         session = null
         target = null
         ui.phase = BubblePhase.Idle
         ui.modelLoading = false
         updateBubble()
+        // Offer Undo briefly right after the text landed.
+        if (offerUndo && ui.canUndo) showQuickAction(BubbleAction.Undo)
     }
 
     private inner class Listener : RecognitionSession.Listener {
@@ -512,7 +590,13 @@ class BubbleAccessibilityService : AccessibilityService() {
         val selEnd = node.textSelectionEnd
         val splice = spliceTranscript(current, selStart, selEnd, transcript)
         if (!writeField(node, splice.text, splice.cursor)) return false
-        recordEdit(node, current.toString(), if (selStart >= 0 && selEnd >= 0) minOf(selStart, selEnd) else -1, splice.text, splice.cursor)
+        // Later sentences of the same dictation join its undo step.
+        val sameDictation = session != null && sessionUndoable
+        if (session != null) sessionUndoable = true
+        recordEdit(
+            node, current.toString(), if (selStart >= 0 && selEnd >= 0) minOf(selStart, selEnd) else -1,
+            splice.text, splice.cursor, mergeWithLast = sameDictation,
+        )
         return true
     }
 
@@ -535,7 +619,14 @@ class BubbleAccessibilityService : AccessibilityService() {
      * reformat what they get), falling back to what was written when the read-back fails or
      * still shows the old text.
      */
-    private fun recordEdit(node: AccessibilityNodeInfo, before: String, selStart: Int, written: String, cursor: Int) {
+    private fun recordEdit(
+        node: AccessibilityNodeInfo,
+        before: String,
+        selStart: Int,
+        written: String,
+        cursor: Int,
+        mergeWithLast: Boolean = false,
+    ) {
         if (node != historyField) {
             history.clear()
             historyField = node
@@ -543,7 +634,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         val after = (if (node.refresh()) fieldText(node).toString() else null)
             ?.takeIf { it != before && it.isNotEmpty() } ?: written
         val beforeCursor = selStart.takeIf { it in 0..before.length } ?: before.length
-        history.record(FieldEdit(before, beforeCursor, after, cursor.coerceIn(0, after.length)))
+        history.record(FieldEdit(before, beforeCursor, after, cursor.coerceIn(0, after.length)), mergeWithLast)
     }
 
     // ── Undo / redo / re-insert ───────────────────────────────────────────────────────────────
@@ -554,11 +645,13 @@ class BubbleAccessibilityService : AccessibilityService() {
         return field.takeIf { it == historyField }
     }
 
-    private fun undo() {
-        if (session != null) return
+    /** Returns whether it undid anything. */
+    private fun undo(): Boolean {
+        if (session != null) return false
         val node = historyTarget()
         val edit = node?.let { history.undo(fieldText(it).toString()) }
-        if (node == null || edit == null || !writeField(node, edit.before, edit.beforeCursor)) {
+        val done = node != null && edit != null && writeField(node, edit.before, edit.beforeCursor)
+        if (!done) {
             // The field changed since (or refused): leave it alone.
             history.clear()
             view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
@@ -566,37 +659,43 @@ class BubbleAccessibilityService : AccessibilityService() {
             view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
         updateActions(findEditableFocus())
+        return done
     }
 
-    private fun redo() {
-        if (session != null) return
+    /** Returns whether it redid anything. */
+    private fun redo(): Boolean {
+        if (session != null) return false
         val node = historyTarget()
         val edit = node?.let { history.redo(fieldText(it).toString()) }
-        if (node == null || edit == null || !writeField(node, edit.after, edit.afterCursor)) {
+        val done = node != null && edit != null && writeField(node, edit.after, edit.afterCursor)
+        if (!done) {
             history.clear()
             view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
         } else {
             view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
         updateActions(findEditableFocus())
+        return done
     }
 
-    /** Inserts the last transcript again at the cursor of the focused field. */
-    private fun reinsert() {
-        if (session != null) return
-        val text = lastTranscript ?: return
+    /** Inserts the last transcript again at the cursor of the focused field; returns whether it did. */
+    private fun reinsert(): Boolean {
+        if (session != null) return false
+        val text = lastTranscript ?: return false
         val node = findEditableFocus()
         if (node == null) {
             toast(R.string.bubble_no_field)
-            return
+            return false
         }
-        if (setText(node, text) || paste(node, text)) {
+        val done = setText(node, text) || paste(node, text)
+        if (done) {
             view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         } else {
             copyToClipboard(text)
             toast(R.string.bubble_copied)
         }
         updateActions(node)
+        return done
     }
 
     /** Pastes [transcript] at the cursor through the clipboard. `false` if the field refused. */
