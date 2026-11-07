@@ -72,29 +72,3 @@ class BubbleComposeView(
         return super.dispatchTouchEvent(event)
     }
 }
-
-/**
- * Hosts the bubble's menu card in its own overlay window (with
- * `FLAG_WATCH_OUTSIDE_TOUCH`). A touch outside it closes the menu through [onOutside] — but only
- * one in another app: Android zeroes the coordinates of an outside touch in a window of another
- * UID, while a touch on the bubble's own mic window keeps them; the mic handles that tap itself
- * (it closes the menu instead of starting a dictation).
- */
-@SuppressLint("ViewConstructor")
-class OutsideTouchComposeView(
-    context: Context,
-    private val onOutside: () -> Unit,
-    private val content: @Composable () -> Unit,
-) : AbstractComposeView(context) {
-
-    @Composable
-    override fun Content() = content()
-
-    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-        if (event.actionMasked == MotionEvent.ACTION_OUTSIDE) {
-            if (event.x == 0f && event.y == 0f) onOutside()
-            return true
-        }
-        return super.dispatchTouchEvent(event)
-    }
-}

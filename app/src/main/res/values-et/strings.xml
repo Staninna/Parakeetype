@@ -222,17 +222,6 @@
     <string name="bubble_service_label">Parakeetype dikteerimismull</string>
     <string name="bubble_service_description">Kuvab hõljuva mikrofoninupu, kui mõni muu klaviatuur on avatud. Puudutage seda, et Parakeetype\'iga dikteerida; tekst lisatakse aktiivsele väljale. Parakeetype kasutab seda juurdepääsu ainult aktiivse tekstivälja leidmiseks, selle tuvastamiseks, kas klaviatuur on kuvatud, ja teksti sisestamiseks. Kõnet töödeldakse selles seadmes ja midagi ei saadeta kuhugi.</string>
     <string name="bubble_start_dictation">Alusta dikteerimist</string>
-    <string name="bubble_more_actions">Võta tagasi, tee uuesti või sisesta uuesti</string>
-    <string name="bubble_close_menu">Sulge menüü</string>
-    <string name="bubble_hide">Peida selle välja jaoks</string>
-    <string name="bubble_hidden_toast">Mull on peidetud, kuni puudutate muud tekstivälja</string>
-    <string name="bubble_pause">Peata mull</string>
-    <string name="bubble_pause_shorter">Lühem</string>
-    <string name="bubble_pause_longer">Pikem</string>
-    <string name="bubble_pause_minutes">%1$d min</string>
-    <string name="bubble_pause_start">Peata %1$d minutiks</string>
-    <string name="bubble_paused_toast">Mull on %1$d minutiks peatatud</string>
-    <string name="bubble_history_changed">Ei saa tagasi võtta ega uuesti teha: tekst on muutunud</string>
     <string name="bubble_stop_dictation">Peata dikteerimine</string>
     <string name="bubble_model_loading">Kõnemudeli laadimine</string>
     <string name="bubble_transcribing">Transkribeerimine</string>

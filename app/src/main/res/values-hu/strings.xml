@@ -222,17 +222,6 @@
     <string name="bubble_service_label">Parakeetype diktálóbuborék</string>
     <string name="bubble_service_description">Lebegő mikrofongombot jelenít meg, amíg egy másik billentyűzet van nyitva. Koppintson rá a Parakeetype-pal való diktáláshoz; a szöveg az aktív mezőbe kerül. A Parakeetype ezt a hozzáférést csak az aktív szövegmező megtalálására, annak érzékelésére, hogy látható-e billentyűzet, és a szöveg beszúrására használja. A beszéd ezen az eszközön dolgozódik fel, és semmi sem kerül elküldésre.</string>
     <string name="bubble_start_dictation">Diktálás indítása</string>
-    <string name="bubble_more_actions">Visszavonás, ismétlés vagy ismételt beszúrás</string>
-    <string name="bubble_close_menu">Menü bezárása</string>
-    <string name="bubble_hide">Elrejtés ehhez a mezőhöz</string>
-    <string name="bubble_hidden_toast">A buborék el van rejtve, amíg egy másik szövegmezőre nem koppint</string>
-    <string name="bubble_pause">Buborék szüneteltetése</string>
-    <string name="bubble_pause_shorter">Rövidebb</string>
-    <string name="bubble_pause_longer">Hosszabb</string>
-    <string name="bubble_pause_minutes">%1$d perc</string>
-    <string name="bubble_pause_start">Szünet %1$d percre</string>
-    <string name="bubble_paused_toast">Buborék szüneteltetve %1$d percre</string>
-    <string name="bubble_history_changed">Nem vonható vissza és nem ismételhető: a szöveg megváltozott</string>
     <string name="bubble_stop_dictation">Diktálás leállítása</string>
     <string name="bubble_model_loading">Beszédmodell betöltése</string>
     <string name="bubble_transcribing">Átírás folyamatban</string>

@@ -9,7 +9,6 @@ import android.content.Intent
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Bundle
-import android.os.SystemClock
 import android.os.Handler
 import android.os.Looper
 import android.speech.SpeechRecognizer
@@ -48,11 +47,6 @@ private const val PREF_RIGHT = "docked_right"
 /** Legacy: the old keyboard-relative height, replaced by the single [PREF_Y]. */
 private const val PREF_LIFT_LEGACY = "lift_px"
 private const val PREF_Y = "free_y"
-private const val PREF_PAUSE_MINUTES = "pause_minutes"
-
-/** The pause lengths the pause pill's − / + step through, in minutes. */
-private val PAUSE_STEPS = listOf(5, 10, 15, 30, 45, 60, 90, 120)
-private const val DEFAULT_PAUSE_MINUTES = 10
 
 private const val EDGE_MARGIN_DP = 4
 
@@ -63,12 +57,6 @@ private const val KEYBOARD_GAP_DP = 8
 private const val DEFAULT_Y_FRACTION = 0.35f
 
 private const val MOVE_ANIMATION_MS = 180L
-
-/** How long Undo (after a dictation) or Redo (after an undo) stays beside the mic. */
-private const val QUICK_ACTION_MS = 4_000L
-
-/** How long the menu card's fade-out runs before its window goes. */
-private const val MENU_EXIT_MS = 170L
 
 /**
  * Shows a floating microphone bubble on focused text fields while another keyboard is in use,
@@ -90,20 +78,6 @@ class BubbleAccessibilityService : AccessibilityService() {
     private val scope = MainScope()
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = Runnable { updateBubble() }
-    private val hideQuickActionRunnable = Runnable { ui.quickAction = null }
-    private val removeMenuRunnable = Runnable { if (!ui.menuOpen) removeMenuWindow() }
-
-    /** The long-press menu's own overlay window (so the mic's window never resizes for it). */
-    private var menuView: OutsideTouchComposeView? = null
-    private var menuParams: WindowManager.LayoutParams? = null
-    private var menuAttached = false
-    private val resumeRunnable = Runnable {
-        pausedUntil = 0L
-        updateBubble()
-    }
-
-    /** While [SystemClock.elapsedRealtime] is before this, the bubble is paused (hidden everywhere). */
-    private var pausedUntil = 0L
 
     private lateinit var windowManager: WindowManager
     private lateinit var inference: InferenceConnection
@@ -118,22 +92,6 @@ class BubbleAccessibilityService : AccessibilityService() {
     /** The field dictation started in; utterances go here even if focus moves meanwhile. */
     private var target: AccessibilityNodeInfo? = null
 
-    /** The field the user hid the bubble for (menu); it shows again on another field. */
-    private var hiddenFor: AccessibilityNodeInfo? = null
-
-    /** Undo / redo of the bubble's insertions into [historyField]. */
-    private val history = EditHistory()
-    private var historyField: AccessibilityNodeInfo? = null
-
-    /** The text of the last dictation session, for re-insertion (memory only). */
-    private var lastTranscript: String? = null
-
-    /** What the running dictation session inserted so far. */
-    private val sessionTranscript = StringBuilder()
-
-    /** The running session made an undoable insertion. */
-    private var sessionUndoable = false
-
     /** Top edge of the visible keyboard in screen pixels, or `null` when none is seen. */
     private var keyboardTop: Int? = null
 
@@ -144,8 +102,6 @@ class BubbleAccessibilityService : AccessibilityService() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         inference = InferenceConnection(this)
         ui.dockedRight = prefs().getBoolean(PREF_RIGHT, true)
-        ui.pauseMinutes = prefs().getInt(PREF_PAUSE_MINUTES, DEFAULT_PAUSE_MINUTES)
-            .takeIf { it in PAUSE_STEPS } ?: DEFAULT_PAUSE_MINUTES
         prefs().edit().remove(PREF_LIFT_LEGACY).apply()
         scope.launch {
             AppPreferences(applicationContext).keepModelLoaded.collect {
@@ -190,216 +146,8 @@ class BubbleAccessibilityService : AccessibilityService() {
         val field = findEditableFocus()
         // Show on any focused field, also when no keyboard is up (e.g. after Back dismissed it);
         // without a keyboard the bubble sits at its remembered free height.
-        if (field == null || field != hiddenFor) hiddenFor = null
-        val paused = SystemClock.elapsedRealtime() < pausedUntil
-        val show = field != null && !keyboard.isOwn && hiddenFor == null && !paused
-        updateActions(field)
+        val show = field != null && !keyboard.isOwn
         if (show) showBubble() else hideBubble()
-    }
-
-    /**
-     * Offers undo / redo only for the field the history belongs to, re-insert for any field;
-     * drops a quick action or an open menu that no longer applies (e.g. focus moved).
-     */
-    private fun updateActions(field: AccessibilityNodeInfo?) {
-        val own = field != null && field == historyField
-        ui.canUndo = own && history.canUndo
-        ui.canRedo = own && history.canRedo
-        ui.canReinsert = field != null && lastTranscript != null
-        when (ui.quickAction) {
-            BubbleAction.Undo -> if (!ui.canUndo) ui.quickAction = null
-            BubbleAction.Redo -> if (!ui.canRedo) ui.quickAction = null
-            else -> Unit
-        }
-        // Hide is always offered, so the menu only closes here once there is no field.
-        if (ui.menuOpen && field == null) closeMenu()
-    }
-
-    /** Shows [action] beside the mic for [QUICK_ACTION_MS]. */
-    private fun showQuickAction(action: BubbleAction) {
-        handler.removeCallbacks(hideQuickActionRunnable)
-        ui.quickAction = action
-        handler.postDelayed(hideQuickActionRunnable, QUICK_ACTION_MS)
-    }
-
-    private fun hideQuickAction() {
-        handler.removeCallbacks(hideQuickActionRunnable)
-        ui.quickAction = null
-    }
-
-    /** Long-press on the idle mic: every usable action (at least pause and hide). */
-    private fun openMenu() {
-        if (session != null || !attached) return
-        updateActions(findEditableFocus())
-        view?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-        hideQuickAction()
-        ui.menuOpen = true
-        showMenuWindow()
-    }
-
-    /** Fades the card out, then removes its window. */
-    private fun closeMenu() {
-        if (!ui.menuOpen) return
-        ui.menuOpen = false
-        ui.menuShown = false
-        handler.removeCallbacks(removeMenuRunnable)
-        handler.postDelayed(removeMenuRunnable, MENU_EXIT_MS)
-    }
-
-    /**
-     * Adds the menu window, invisible: once it is laid out (and on every later size change,
-     * e.g. a row appearing) it is placed next to the mic, and only then is the card shown.
-     */
-    private fun showMenuWindow() {
-        handler.removeCallbacks(removeMenuRunnable)
-        if (menuAttached) {
-            placeMenu()
-            ui.menuShown = true
-            return
-        }
-        val v = menuView ?: OutsideTouchComposeView(this, onOutside = ::closeMenu) {
-            ParakeetypeKeyboardTheme {
-                BubbleMenu(
-                    state = ui,
-                    onAction = ::onAction,
-                    onPauseStep = ::onPauseStep,
-                    onPauseStart = ::onPauseStart,
-                )
-            }
-        }.also {
-            owner.attachTo(it)
-            it.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
-                if (bottom - top != oldBottom - oldTop) placeMenu()
-                if (ui.menuOpen && !ui.menuShown) ui.menuShown = true
-            }
-            menuView = it
-        }
-        val lp = menuParams ?: WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    // A tap anywhere else closes the menu.
-                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-            PixelFormat.TRANSLUCENT,
-        ).also { menuParams = it }
-        computeMenuPosition(lp, menuHeight = 0)
-        try {
-            windowManager.addView(v, lp)
-            menuAttached = true
-        } catch (e: Exception) {
-            Log.e(TAG, "Could not add the bubble menu", e)
-            ui.menuOpen = false
-        }
-    }
-
-    /** Puts the menu right above the mic (below it when there is no room), on the mic's side. */
-    private fun placeMenu() {
-        val lp = menuParams ?: return
-        if (!menuAttached) return
-        computeMenuPosition(lp, menuHeight = menuView?.height ?: 0)
-        windowManager.updateViewLayout(menuView, lp)
-    }
-
-    private fun computeMenuPosition(lp: WindowManager.LayoutParams, menuHeight: Int) {
-        val mic = params ?: return
-        val micHeight = view?.height?.takeIf { it > 0 } ?: windowSizePx()
-        // Both windows carry shadow padding; overlap it so the card sits close to the mic.
-        val overlap = dp(BUBBLE_WINDOW_PADDING.value.toInt())
-        lp.gravity = Gravity.TOP or if (ui.dockedRight) Gravity.RIGHT else Gravity.LEFT
-        lp.x = dp(EDGE_MARGIN_DP)
-        val above = mic.y - menuHeight + overlap
-        ui.menuAbove = above >= 0
-        lp.y = if (ui.menuAbove) above else mic.y + micHeight - overlap
-    }
-
-    private fun removeMenuWindow() {
-        handler.removeCallbacks(removeMenuRunnable)
-        val v = menuView ?: return
-        if (!menuAttached) return
-        try {
-            windowManager.removeView(v)
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not remove the bubble menu", e)
-        }
-        menuAttached = false
-    }
-
-    /** − / + on the menu's pause row: the next shorter / longer length, remembered for next time. */
-    private fun onPauseStep(direction: Int) {
-        val index = PAUSE_STEPS.indexOf(ui.pauseMinutes).coerceAtLeast(0)
-        val next = PAUSE_STEPS[(index + direction).coerceIn(0, PAUSE_STEPS.lastIndex)]
-        if (next == ui.pauseMinutes) {
-            menuView?.performHapticFeedback(HapticFeedbackConstants.REJECT)
-        } else {
-            ui.pauseMinutes = next
-            prefs().edit().putInt(PREF_PAUSE_MINUTES, next).apply()
-            menuView?.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-        }
-    }
-
-    /** Hides the bubble everywhere for the chosen length; it comes back on its own. */
-    private fun onPauseStart() {
-        val minutes = ui.pauseMinutes
-        closeMenu()
-        hideQuickAction()
-        val ms = minutes * 60_000L
-        pausedUntil = SystemClock.elapsedRealtime() + ms
-        handler.removeCallbacks(resumeRunnable)
-        handler.postDelayed(resumeRunnable, ms)
-        view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-        Toast.makeText(this, getString(R.string.bubble_paused_toast, minutes), Toast.LENGTH_SHORT).show()
-        hideBubble()
-    }
-
-    /** A tap on the idle mic: closes an open menu, otherwise starts dictating. */
-    private fun onMicTap() {
-        if (ui.menuOpen) {
-            closeMenu()
-            return
-        }
-        hideQuickAction()
-        startDictation()
-    }
-
-    /**
-     * Runs [action]. From the menu, the menu stays open (the user may want to undo more) with
-     * its timeout restarted, now listing what is usable after the action; it closes once
-     * nothing is. From the quick action, the follow-up (Redo after Undo …) is offered briefly.
-     */
-    private fun onAction(action: BubbleAction) {
-        if (action == BubbleAction.Hide) {
-            hideForField()
-            return
-        }
-        val fromMenu = ui.menuOpen
-        hideQuickAction()
-        val done = when (action) {
-            BubbleAction.Undo -> undo()
-            BubbleAction.Redo -> redo()
-            BubbleAction.Reinsert -> reinsert()
-            BubbleAction.Hide -> false
-        }
-        // From the menu it stays open; undo / redo / reinsert refreshed its rows.
-        if (fromMenu) return
-        if (!done) return
-        when (action) {
-            BubbleAction.Undo -> if (ui.canRedo) showQuickAction(BubbleAction.Redo)
-            BubbleAction.Redo, BubbleAction.Reinsert -> if (ui.canUndo) showQuickAction(BubbleAction.Undo)
-            BubbleAction.Hide -> Unit
-        }
-    }
-
-    /** Hides the bubble until another field is focused (menu action). */
-    private fun hideForField() {
-        closeMenu()
-        hideQuickAction()
-        hiddenFor = findEditableFocus()
-        view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-        toast(R.string.bubble_hidden_toast)
-        hideBubble()
     }
 
     private class Keyboard(val top: Int?, val isOwn: Boolean)
@@ -449,11 +197,9 @@ class BubbleAccessibilityService : AccessibilityService() {
                 ParakeetypeKeyboardTheme {
                     BubbleContent(
                         state = ui,
-                        onStart = ::onMicTap,
+                        onStart = ::startDictation,
                         onFinish = ::finishDictation,
                         onCancel = ::cancelDictation,
-                        onMenu = ::openMenu,
-                        onAction = ::onAction,
                     )
                 }
             }.also {
@@ -492,9 +238,6 @@ class BubbleAccessibilityService : AccessibilityService() {
 
     private fun removeBubble() {
         moveAnimator?.cancel()
-        ui.menuOpen = false
-        ui.menuShown = false
-        removeMenuWindow()
         val v = view ?: return
         if (!attached) return
         try {
@@ -568,7 +311,6 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (!attached) return
         if (!dragging) {
             dragging = true
-            closeMenu()
             moveAnimator?.cancel()
             // Switch to absolute left-based coordinates for the drag.
             val width = windowManager.currentWindowMetrics.bounds.width()
@@ -619,10 +361,6 @@ class BubbleAccessibilityService : AccessibilityService() {
             return
         }
         target = field
-        sessionTranscript.clear()
-        sessionUndoable = false
-        closeMenu()
-        hideQuickAction()
         // Hold the microphone foreground-service state while dictating from the bubble (see
         // InferenceService.keepLoadedServiceTypes).
         if (keepModelLoaded) InferenceService.startKeepLoaded(this)
@@ -656,18 +394,12 @@ class BubbleAccessibilityService : AccessibilityService() {
     }
 
     private fun endSession() {
-        if (sessionTranscript.isNotEmpty()) lastTranscript = sessionTranscript.toString()
-        sessionTranscript.clear()
-        val offerUndo = sessionUndoable
-        sessionUndoable = false
         view?.keepScreenOn = false
         session = null
         target = null
         ui.phase = BubblePhase.Idle
         ui.modelLoading = false
         updateBubble()
-        // Offer Undo briefly right after the text landed.
-        if (offerUndo && ui.canUndo) showQuickAction(BubbleAction.Undo)
     }
 
     private inner class Listener : RecognitionSession.Listener {
@@ -716,11 +448,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (transcript.isBlank()) return
         // Never switch to whatever field has focus now: that could be another chat.
         val node = target?.takeIf { it.refresh() }
-        if (node != null && (setText(node, transcript) || paste(node, transcript))) {
-            if (sessionTranscript.isNotEmpty()) sessionTranscript.append(' ')
-            sessionTranscript.append(transcript.trim())
-            return
-        }
+        if (node != null && (setText(node, transcript) || paste(node, transcript))) return
         // The field takes neither direct insertion nor paste. Copy this segment and stop the
         // session: a later segment would replace the clipboard and lose this sentence.
         copyToClipboard(transcript.trim())
@@ -751,118 +479,17 @@ class BubbleAccessibilityService : AccessibilityService() {
     private fun setText(node: AccessibilityNodeInfo, transcript: String): Boolean {
         if (!node.actionList.contains(AccessibilityAction.ACTION_SET_TEXT)) return false
         val current: CharSequence = fieldText(node)
-        val selStart = node.textSelectionStart
-        val selEnd = node.textSelectionEnd
-        val splice = spliceTranscript(current, selStart, selEnd, transcript)
-        if (!writeField(node, splice.text, splice.cursor)) return false
-        // Later sentences of the same dictation join its undo step.
-        val sameDictation = session != null && sessionUndoable
-        if (session != null) sessionUndoable = true
-        recordEdit(
-            node, current.toString(), if (selStart >= 0 && selEnd >= 0) minOf(selStart, selEnd) else -1,
-            splice.text, splice.cursor, mergeWithLast = sameDictation,
-        )
-        return true
-    }
-
-    /** Replaces the field's whole text with [text] and puts the cursor at [cursor]. */
-    private fun writeField(node: AccessibilityNodeInfo, text: String, cursor: Int): Boolean {
+        val splice = spliceTranscript(current, node.textSelectionStart, node.textSelectionEnd, transcript)
         val textArgs = Bundle().apply {
-            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, splice.text)
         }
         if (!node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, textArgs)) return false
         val selectionArgs = Bundle().apply {
-            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, cursor)
-            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, cursor)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, splice.cursor)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, splice.cursor)
         }
         node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selectionArgs)
         return true
-    }
-
-    /**
-     * Records an insertion for undo. The text after it is read back from the field (apps may
-     * reformat what they get), falling back to what was written when the read-back fails or
-     * still shows the old text.
-     */
-    private fun recordEdit(
-        node: AccessibilityNodeInfo,
-        before: String,
-        selStart: Int,
-        written: String,
-        cursor: Int,
-        mergeWithLast: Boolean = false,
-    ) {
-        if (node != historyField) {
-            history.clear()
-            historyField = node
-        }
-        val after = (if (node.refresh()) fieldText(node).toString() else null)
-            ?.takeIf { it != before && it.isNotEmpty() } ?: written
-        val beforeCursor = selStart.takeIf { it in 0..before.length } ?: before.length
-        history.record(FieldEdit(before, beforeCursor, after, cursor.coerceIn(0, after.length)), mergeWithLast)
-    }
-
-    // ── Undo / redo / re-insert ───────────────────────────────────────────────────────────────
-
-    /** The focused field, if it is the one the history belongs to. */
-    private fun historyTarget(): AccessibilityNodeInfo? {
-        val field = findEditableFocus() ?: return null
-        return field.takeIf { it == historyField }
-    }
-
-    /** Returns whether it undid anything. */
-    private fun undo(): Boolean {
-        if (session != null) return false
-        val node = historyTarget()
-        val edit = node?.let { history.undo(fieldText(it).toString()) }
-        val done = node != null && edit != null && writeField(node, edit.before, edit.beforeCursor)
-        if (!done) {
-            // The field changed since (or refused): leave it alone.
-            history.clear()
-            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
-            toast(R.string.bubble_history_changed)
-        } else {
-            view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-        }
-        updateActions(findEditableFocus())
-        return done
-    }
-
-    /** Returns whether it redid anything. */
-    private fun redo(): Boolean {
-        if (session != null) return false
-        val node = historyTarget()
-        val edit = node?.let { history.redo(fieldText(it).toString()) }
-        val done = node != null && edit != null && writeField(node, edit.after, edit.afterCursor)
-        if (!done) {
-            history.clear()
-            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
-            toast(R.string.bubble_history_changed)
-        } else {
-            view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-        }
-        updateActions(findEditableFocus())
-        return done
-    }
-
-    /** Inserts the last transcript again at the cursor of the focused field; returns whether it did. */
-    private fun reinsert(): Boolean {
-        if (session != null) return false
-        val text = lastTranscript ?: return false
-        val node = findEditableFocus()
-        if (node == null) {
-            toast(R.string.bubble_no_field)
-            return false
-        }
-        val done = setText(node, text) || paste(node, text)
-        if (done) {
-            view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-        } else {
-            copyToClipboard(text)
-            toast(R.string.bubble_copied)
-        }
-        updateActions(node)
-        return done
     }
 
     /** Pastes [transcript] at the cursor through the clipboard. `false` if the field refused. */

@@ -222,17 +222,6 @@
     <string name="bubble_service_label">Parakeetype diktēšanas burbulis</string>
     <string name="bubble_service_description">Rāda peldošu mikrofona pogu, kamēr ir atvērta cita tastatūra. Pieskarieties tai, lai diktētu ar Parakeetype; teksts tiek ievietots aktīvajā laukā. Parakeetype šo piekļuvi izmanto tikai, lai atrastu aktīvo teksta lauku, noteiktu, vai ir parādīta tastatūra, un ievietotu tekstu. Runa tiek apstrādāta šajā ierīcē, un nekas netiek nekur sūtīts.</string>
     <string name="bubble_start_dictation">Sākt diktēšanu</string>
-    <string name="bubble_more_actions">Atsaukt, atcelt atsaukšanu vai ievietot vēlreiz</string>
-    <string name="bubble_close_menu">Aizvērt izvēlni</string>
-    <string name="bubble_hide">Slēpt šim laukam</string>
-    <string name="bubble_hidden_toast">Burbulis paslēpts, līdz pieskaraties citam teksta laukam</string>
-    <string name="bubble_pause">Pauzēt burbuli</string>
-    <string name="bubble_pause_shorter">Īsāk</string>
-    <string name="bubble_pause_longer">Ilgāk</string>
-    <string name="bubble_pause_minutes">%1$d min</string>
-    <string name="bubble_pause_start">Pauzēt uz %1$d minūtēm</string>
-    <string name="bubble_paused_toast">Burbulis pauzēts uz %1$d minūtēm</string>
-    <string name="bubble_history_changed">Nevar atsaukt vai atcelt atsaukšanu: teksts ir mainīts</string>
     <string name="bubble_stop_dictation">Apturēt diktēšanu</string>
     <string name="bubble_model_loading">Notiek runas modeļa ielāde</string>
     <string name="bubble_transcribing">Notiek transkripcija</string>

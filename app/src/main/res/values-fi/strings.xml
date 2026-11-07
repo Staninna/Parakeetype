@@ -222,17 +222,6 @@
     <string name="bubble_service_label">Parakeetypen sanelukupla</string>
     <string name="bubble_service_description">Näyttää kelluvan mikrofonipainikkeen, kun toinen näppäimistö on auki. Sanele Parakeetypella napauttamalla sitä; teksti lisätään aktiiviseen kenttään. Parakeetype käyttää tätä käyttöoikeutta vain aktiivisen tekstikentän löytämiseen, sen havaitsemiseen onko näppäimistö näkyvissä ja tekstin lisäämiseen. Puhe käsitellään tällä laitteella eikä mitään lähetetä mihinkään.</string>
     <string name="bubble_start_dictation">Aloita sanelu</string>
-    <string name="bubble_more_actions">Kumoa, tee uudelleen tai lisää uudelleen</string>
-    <string name="bubble_close_menu">Sulje valikko</string>
-    <string name="bubble_hide">Piilota tältä kentältä</string>
-    <string name="bubble_hidden_toast">Kupla piilotettu, kunnes napautat toista tekstikenttää</string>
-    <string name="bubble_pause">Keskeytä kupla</string>
-    <string name="bubble_pause_shorter">Lyhyempi</string>
-    <string name="bubble_pause_longer">Pidempi</string>
-    <string name="bubble_pause_minutes">%1$d min</string>
-    <string name="bubble_pause_start">Keskeytä %1$d minuutiksi</string>
-    <string name="bubble_paused_toast">Kupla keskeytetty %1$d minuutiksi</string>
-    <string name="bubble_history_changed">Ei voi kumota tai tehdä uudelleen: tekstiä on muutettu</string>
     <string name="bubble_stop_dictation">Lopeta sanelu</string>
     <string name="bubble_model_loading">Ladataan puhemallia</string>
     <string name="bubble_transcribing">Puretaan tekstiksi</string>

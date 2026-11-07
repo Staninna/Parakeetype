@@ -244,17 +244,6 @@
     <string name="bubble_service_label">Parakeetype dictation bubble</string>
     <string name="bubble_service_description">Shows a floating microphone button while another keyboard is open. Tap it to dictate with Parakeetype; the text is inserted into the focused field. Parakeetype uses this access only to find the focused text field, to see whether a keyboard is shown and to insert the transcript. Speech is processed on this device and nothing is sent anywhere.</string>
     <string name="bubble_start_dictation">Start dictation</string>
-    <string name="bubble_more_actions">Undo, redo or insert again</string>
-    <string name="bubble_close_menu">Close menu</string>
-    <string name="bubble_hide">Hide for this field</string>
-    <string name="bubble_hidden_toast">Bubble hidden until you tap another text field</string>
-    <string name="bubble_pause">Pause bubble</string>
-    <string name="bubble_pause_shorter">Shorter</string>
-    <string name="bubble_pause_longer">Longer</string>
-    <string name="bubble_pause_minutes">%1$d min</string>
-    <string name="bubble_pause_start">Pause for %1$d minutes</string>
-    <string name="bubble_paused_toast">Bubble paused for %1$d minutes</string>
-    <string name="bubble_history_changed">Can\'t undo or redo: the text was changed</string>
     <string name="bubble_stop_dictation">Stop dictation</string>
     <string name="bubble_model_loading">Loading the speech model</string>
     <string name="bubble_transcribing">Transcribing</string>

@@ -223,17 +223,6 @@
     <string name="bubble_service_label">Bulle de dictée Parakeetype</string>
     <string name="bubble_service_description">Affiche un bouton de microphone flottant lorsqu\'un autre clavier est ouvert. Touchez-le pour dicter avec Parakeetype ; le texte est inséré dans le champ actif. Parakeetype n\'utilise cet accès que pour repérer le champ de texte actif, voir si un clavier est affiché et insérer le texte. La voix est traitée sur cet appareil et rien n\'est envoyé.</string>
     <string name="bubble_start_dictation">Démarrer la dictée</string>
-    <string name="bubble_more_actions">Annuler, rétablir ou réinsérer</string>
-    <string name="bubble_close_menu">Fermer le menu</string>
-    <string name="bubble_hide">Masquer pour ce champ</string>
-    <string name="bubble_hidden_toast">Bulle masquée jusqu\'à ce que vous touchiez un autre champ de texte</string>
-    <string name="bubble_pause">Mettre la bulle en pause</string>
-    <string name="bubble_pause_shorter">Plus court</string>
-    <string name="bubble_pause_longer">Plus long</string>
-    <string name="bubble_pause_minutes">%1$d min</string>
-    <string name="bubble_pause_start">Pause de %1$d minutes</string>
-    <string name="bubble_paused_toast">Bulle en pause pendant %1$d minutes</string>
-    <string name="bubble_history_changed">Impossible d\'annuler ou de rétablir : le texte a été modifié</string>
     <string name="bubble_stop_dictation">Arrêter la dictée</string>
     <string name="bubble_model_loading">Chargement du modèle vocal</string>
     <string name="bubble_transcribing">Transcription en cours</string>

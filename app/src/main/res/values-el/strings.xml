@@ -222,17 +222,6 @@
     <string name="bubble_service_label">Φυσαλίδα υπαγόρευσης Parakeetype</string>
     <string name="bubble_service_description">Εμφανίζει ένα πλωτό κουμπί μικροφώνου όσο είναι ανοιχτό ένα άλλο πληκτρολόγιο. Πατήστε το για να υπαγορεύσετε με το Parakeetype· το κείμενο εισάγεται στο ενεργό πεδίο. Το Parakeetype χρησιμοποιεί αυτή την πρόσβαση μόνο για να εντοπίσει το ενεργό πεδίο κειμένου, να δει αν εμφανίζεται πληκτρολόγιο και να εισαγάγει το κείμενο. Η ομιλία επεξεργάζεται σε αυτή τη συσκευή και δεν αποστέλλεται τίποτα πουθενά.</string>
     <string name="bubble_start_dictation">Έναρξη υπαγόρευσης</string>
-    <string name="bubble_more_actions">Αναίρεση, επανάληψη ή επανεισαγωγή</string>
-    <string name="bubble_close_menu">Κλείσιμο μενού</string>
-    <string name="bubble_hide">Απόκρυψη για αυτό το πεδίο</string>
-    <string name="bubble_hidden_toast">Η φυσαλίδα κρύφτηκε μέχρι να πατήσετε άλλο πεδίο κειμένου</string>
-    <string name="bubble_pause">Παύση φούσκας</string>
-    <string name="bubble_pause_shorter">Συντομότερα</string>
-    <string name="bubble_pause_longer">Περισσότερο</string>
-    <string name="bubble_pause_minutes">%1$d λεπ.</string>
-    <string name="bubble_pause_start">Παύση για %1$d λεπτά</string>
-    <string name="bubble_paused_toast">Η φούσκα σε παύση για %1$d λεπτά</string>
-    <string name="bubble_history_changed">Δεν είναι δυνατή η αναίρεση ή επανάληψη: το κείμενο άλλαξε</string>
     <string name="bubble_stop_dictation">Διακοπή υπαγόρευσης</string>
     <string name="bubble_model_loading">Φόρτωση του μοντέλου ομιλίας</string>
     <string name="bubble_transcribing">Μεταγραφή</string>
