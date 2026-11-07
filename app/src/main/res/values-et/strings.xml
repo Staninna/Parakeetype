@@ -223,6 +223,7 @@
     <string name="bubble_service_description">Kuvab hõljuva mikrofoninupu, kui mõni muu klaviatuur on avatud. Puudutage seda, et Parakeetype\'iga dikteerida; tekst lisatakse aktiivsele väljale. Parakeetype kasutab seda juurdepääsu ainult aktiivse tekstivälja leidmiseks, selle tuvastamiseks, kas klaviatuur on kuvatud, ja teksti sisestamiseks. Kõnet töödeldakse selles seadmes ja midagi ei saadeta kuhugi.</string>
     <string name="bubble_start_dictation">Alusta dikteerimist</string>
     <string name="bubble_more_actions">Võta tagasi, tee uuesti või sisesta uuesti</string>
+    <string name="bubble_close_menu">Sulge menüü</string>
     <string name="bubble_stop_dictation">Peata dikteerimine</string>
     <string name="bubble_model_loading">Kõnemudeli laadimine</string>
     <string name="bubble_transcribing">Transkribeerimine</string>

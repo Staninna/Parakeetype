@@ -223,6 +223,7 @@
     <string name="bubble_service_description">Toont een zwevende microfoonknop terwijl een ander toetsenbord open is. Tik erop om met Parakeetype te dicteren; de tekst wordt in het actieve veld gezet. Parakeetype gebruikt deze toegang alleen om het actieve tekstveld te vinden, te zien of er een toetsenbord open is en de tekst in te voegen. Spraak wordt op dit apparaat verwerkt en er wordt niets verstuurd.</string>
     <string name="bubble_start_dictation">Dicteren starten</string>
     <string name="bubble_more_actions">Ongedaan maken, opnieuw uitvoeren of opnieuw invoegen</string>
+    <string name="bubble_close_menu">Menu sluiten</string>
     <string name="bubble_stop_dictation">Dicteren stoppen</string>
     <string name="bubble_model_loading">Spraakmodel wordt geladen</string>
     <string name="bubble_transcribing">Bezig met uitschrijven</string>

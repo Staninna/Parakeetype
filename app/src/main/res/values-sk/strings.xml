@@ -223,6 +223,7 @@
     <string name="bubble_service_description">Zobrazuje plávajúce tlačidlo mikrofónu, keď je otvorená iná klávesnica. Klepnutím naň diktujte cez Parakeetype; text sa vloží do aktívneho poľa. Parakeetype tento prístup používa len na nájdenie aktívneho textového poľa, na zistenie, či je zobrazená klávesnica, a na vloženie textu. Reč sa spracúva v tomto zariadení a nič sa nikam neodosiela.</string>
     <string name="bubble_start_dictation">Spustiť diktovanie</string>
     <string name="bubble_more_actions">Vrátiť, znova vykonať alebo znova vložiť</string>
+    <string name="bubble_close_menu">Zavrieť ponuku</string>
     <string name="bubble_stop_dictation">Zastaviť diktovanie</string>
     <string name="bubble_model_loading">Načítava sa model reči</string>
     <string name="bubble_transcribing">Prepisuje sa</string>

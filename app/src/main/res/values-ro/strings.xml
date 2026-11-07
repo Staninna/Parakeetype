@@ -224,6 +224,7 @@
     <string name="bubble_service_description">Afișează un buton de microfon flotant cât timp este deschisă o altă tastatură. Atinge-l pentru a dicta cu Parakeetype; textul este inserat în câmpul activ. Parakeetype folosește acest acces doar pentru a găsi câmpul de text activ, a vedea dacă este afișată o tastatură și a insera textul. Vocea este procesată pe acest dispozitiv și nu se trimite nimic nicăieri.</string>
     <string name="bubble_start_dictation">Începe dictarea</string>
     <string name="bubble_more_actions">Anulează, refă sau inserează din nou</string>
+    <string name="bubble_close_menu">Închide meniul</string>
     <string name="bubble_stop_dictation">Oprește dictarea</string>
     <string name="bubble_model_loading">Se încarcă modelul de voce</string>
     <string name="bubble_transcribing">Se transcrie</string>

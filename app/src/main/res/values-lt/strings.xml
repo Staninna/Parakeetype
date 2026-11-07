@@ -223,6 +223,7 @@
     <string name="bubble_service_description">Rodo slankųjį mikrofono mygtuką, kol atidaryta kita klaviatūra. Palieskite jį, kad diktuotumėte su Parakeetype; tekstas įterpiamas į aktyvų lauką. Parakeetype šią prieigą naudoja tik tam, kad rastų aktyvų teksto lauką, nustatytų, ar rodoma klaviatūra, ir įterptų tekstą. Kalba apdorojama šiame įrenginyje ir niekur nieko nesiunčiama.</string>
     <string name="bubble_start_dictation">Pradėti diktavimą</string>
     <string name="bubble_more_actions">Anuliuoti, grąžinti arba įterpti dar kartą</string>
+    <string name="bubble_close_menu">Uždaryti meniu</string>
     <string name="bubble_stop_dictation">Stabdyti diktavimą</string>
     <string name="bubble_model_loading">Įkeliamas kalbos modelis</string>
     <string name="bubble_transcribing">Transkribuojama</string>

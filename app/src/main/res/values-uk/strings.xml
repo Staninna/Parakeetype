@@ -223,6 +223,7 @@
     <string name="bubble_service_description">Показує плаваючу кнопку мікрофона, поки відкрита інша клавіатура. Торкніться її, щоб диктувати за допомогою Parakeetype; текст вставляється в активне поле. Parakeetype використовує цей доступ лише для того, щоб знайти активне текстове поле, визначити, чи показано клавіатуру, і вставити текст. Мовлення обробляється на цьому пристрої, і нічого нікуди не надсилається.</string>
     <string name="bubble_start_dictation">Почати диктування</string>
     <string name="bubble_more_actions">Скасувати, повернути або вставити знову</string>
+    <string name="bubble_close_menu">Закрити меню</string>
     <string name="bubble_stop_dictation">Зупинити диктування</string>
     <string name="bubble_model_loading">Завантаження мовленнєвої моделі</string>
     <string name="bubble_transcribing">Розшифрування</string>

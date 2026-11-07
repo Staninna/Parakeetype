@@ -223,6 +223,7 @@
     <string name="bubble_service_description">Visar en flytande mikrofonknapp medan ett annat tangentbord är öppet. Tryck på den för att diktera med Parakeetype; texten infogas i det aktiva fältet. Parakeetype använder den här åtkomsten enbart för att hitta det aktiva textfältet, se om ett tangentbord visas och infoga texten. Tal bearbetas på den här enheten och inget skickas någonstans.</string>
     <string name="bubble_start_dictation">Starta diktering</string>
     <string name="bubble_more_actions">Ångra, gör om eller infoga igen</string>
+    <string name="bubble_close_menu">Stäng menyn</string>
     <string name="bubble_stop_dictation">Stoppa diktering</string>
     <string name="bubble_model_loading">Läser in talmodellen</string>
     <string name="bubble_transcribing">Transkriberar</string>

@@ -224,6 +224,7 @@
     <string name="bubble_service_description">Muestra un botón de micrófono flotante mientras hay otro teclado abierto. Tócalo para dictar con Parakeetype; el texto se inserta en el campo activo. Parakeetype usa este acceso solo para encontrar el campo de texto activo, ver si hay un teclado visible e insertar el texto. La voz se procesa en este dispositivo y no se envía nada.</string>
     <string name="bubble_start_dictation">Iniciar dictado</string>
     <string name="bubble_more_actions">Deshacer, rehacer o volver a insertar</string>
+    <string name="bubble_close_menu">Cerrar menú</string>
     <string name="bubble_stop_dictation">Detener dictado</string>
     <string name="bubble_model_loading">Cargando el modelo de voz</string>
     <string name="bubble_transcribing">Transcribiendo</string>

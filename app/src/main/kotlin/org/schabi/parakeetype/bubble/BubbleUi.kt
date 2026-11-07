@@ -4,6 +4,7 @@ package org.schabi.parakeetype.bubble
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -53,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -192,9 +194,9 @@ private fun IdleBubble(
         }
         if (state.dockedRight) {
             side()
-            MicButton(onStart = onStart, onMenu = onMenu)
+            MicButton(menuOpen = state.menuOpen, onStart = onStart, onMenu = onMenu)
         } else {
-            MicButton(onStart = onStart, onMenu = onMenu)
+            MicButton(menuOpen = state.menuOpen, onStart = onStart, onMenu = onMenu)
             side()
         }
     }
@@ -255,10 +257,19 @@ private fun ActionBubble(icon: ImageVector, label: String, floating: Boolean, on
 
 private val ACTION_BUBBLE_SIZE = 42.dp
 
+/**
+ * The round mic. While the long-press menu is open it turns into a close (✕) — a tap then closes
+ * the menu instead of starting a dictation — with a quick rotate-and-crossfade either way.
+ */
 @Composable
-private fun MicButton(onStart: () -> Unit, onMenu: () -> Unit) {
-    val start = stringResource(R.string.bubble_start_dictation)
+private fun MicButton(menuOpen: Boolean, onStart: () -> Unit, onMenu: () -> Unit) {
+    val start = stringResource(if (menuOpen) R.string.bubble_close_menu else R.string.bubble_start_dictation)
     val menu = stringResource(R.string.bubble_more_actions)
+    val rotation by animateFloatAsState(
+        targetValue = if (menuOpen) 90f else 0f,
+        animationSpec = tween(200, easing = FastOutSlowInEasing),
+        label = "micRotation",
+    )
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,
@@ -279,7 +290,13 @@ private fun MicButton(onStart: () -> Unit, onMenu: () -> Unit) {
                 )
                 .semantics { contentDescription = start },
         ) {
-            Icon(Icons.Rounded.Mic, contentDescription = null, modifier = Modifier.size(28.dp))
+            Crossfade(targetState = menuOpen, animationSpec = tween(200), label = "micIcon") { open ->
+                Icon(
+                    if (open) Icons.Rounded.Close else Icons.Rounded.Mic,
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp).rotate(rotation),
+                )
+            }
         }
     }
 }
