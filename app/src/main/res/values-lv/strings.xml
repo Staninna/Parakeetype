@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Sākt diktēšanu</string>
     <string name="bubble_more_actions">Atsaukt, atcelt atsaukšanu vai ievietot vēlreiz</string>
     <string name="bubble_close_menu">Aizvērt izvēlni</string>
+    <string name="bubble_hide">Slēpt šim laukam</string>
+    <string name="bubble_hidden_toast">Burbulis paslēpts, līdz pieskaraties citam teksta laukam</string>
     <string name="bubble_stop_dictation">Apturēt diktēšanu</string>
     <string name="bubble_model_loading">Notiek runas modeļa ielāde</string>
     <string name="bubble_transcribing">Notiek transkripcija</string>

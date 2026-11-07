@@ -250,6 +250,8 @@
     <string name="bubble_start_dictation">Diktat starten</string>
     <string name="bubble_more_actions">Rückgängig, wiederherstellen oder erneut einfügen</string>
     <string name="bubble_close_menu">Menü schließen</string>
+    <string name="bubble_hide">Für dieses Feld ausblenden</string>
+    <string name="bubble_hidden_toast">Blase ausgeblendet, bis du auf ein anderes Textfeld tippst</string>
     <string name="bubble_stop_dictation">Diktat stoppen</string>
     <string name="bubble_model_loading">Sprachmodell wird geladen</string>
     <string name="bubble_transcribing">Wird transkribiert</string>

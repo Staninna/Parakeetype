@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Начать диктовку</string>
     <string name="bubble_more_actions">Отменить, вернуть или вставить снова</string>
     <string name="bubble_close_menu">Закрыть меню</string>
+    <string name="bubble_hide">Скрыть для этого поля</string>
+    <string name="bubble_hidden_toast">Кнопка скрыта, пока вы не коснётесь другого текстового поля</string>
     <string name="bubble_stop_dictation">Остановить диктовку</string>
     <string name="bubble_model_loading">Загрузка речевой модели</string>
     <string name="bubble_transcribing">Расшифровка</string>

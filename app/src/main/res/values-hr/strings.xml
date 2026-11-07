@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Pokreni diktiranje</string>
     <string name="bubble_more_actions">Poništi, ponovi ili ponovno umetni</string>
     <string name="bubble_close_menu">Zatvori izbornik</string>
+    <string name="bubble_hide">Sakrij za ovo polje</string>
+    <string name="bubble_hidden_toast">Mjehurić skriven dok ne dodirnete drugo tekstno polje</string>
     <string name="bubble_stop_dictation">Zaustavi diktiranje</string>
     <string name="bubble_model_loading">Učitavanje govornog modela</string>
     <string name="bubble_transcribing">Prepisivanje</string>

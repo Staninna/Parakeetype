@@ -246,6 +246,8 @@
     <string name="bubble_start_dictation">Start dictation</string>
     <string name="bubble_more_actions">Undo, redo or insert again</string>
     <string name="bubble_close_menu">Close menu</string>
+    <string name="bubble_hide">Hide for this field</string>
+    <string name="bubble_hidden_toast">Bubble hidden until you tap another text field</string>
     <string name="bubble_stop_dictation">Stop dictation</string>
     <string name="bubble_model_loading">Loading the speech model</string>
     <string name="bubble_transcribing">Transcribing</string>

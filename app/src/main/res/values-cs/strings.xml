@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Spustit diktování</string>
     <string name="bubble_more_actions">Vrátit, znovu provést nebo znovu vložit</string>
     <string name="bubble_close_menu">Zavřít nabídku</string>
+    <string name="bubble_hide">Skrýt pro toto pole</string>
+    <string name="bubble_hidden_toast">Bublina skrytá, dokud neklepnete na jiné textové pole</string>
     <string name="bubble_stop_dictation">Zastavit diktování</string>
     <string name="bubble_model_loading">Načítání modelu řeči</string>
     <string name="bubble_transcribing">Přepis</string>

@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Začni narekovanje</string>
     <string name="bubble_more_actions">Razveljavi, uveljavi ali znova vstavi</string>
     <string name="bubble_close_menu">Zapri meni</string>
+    <string name="bubble_hide">Skrij za to polje</string>
+    <string name="bubble_hidden_toast">Mehurček skrit, dokler ne tapnete drugega besedilnega polja</string>
     <string name="bubble_stop_dictation">Ustavi narekovanje</string>
     <string name="bubble_model_loading">Nalaganje govornega modela</string>
     <string name="bubble_transcribing">Prepisovanje</string>

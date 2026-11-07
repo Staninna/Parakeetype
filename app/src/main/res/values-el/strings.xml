@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Έναρξη υπαγόρευσης</string>
     <string name="bubble_more_actions">Αναίρεση, επανάληψη ή επανεισαγωγή</string>
     <string name="bubble_close_menu">Κλείσιμο μενού</string>
+    <string name="bubble_hide">Απόκρυψη για αυτό το πεδίο</string>
+    <string name="bubble_hidden_toast">Η φυσαλίδα κρύφτηκε μέχρι να πατήσετε άλλο πεδίο κειμένου</string>
     <string name="bubble_stop_dictation">Διακοπή υπαγόρευσης</string>
     <string name="bubble_model_loading">Φόρτωση του μοντέλου ομιλίας</string>
     <string name="bubble_transcribing">Μεταγραφή</string>

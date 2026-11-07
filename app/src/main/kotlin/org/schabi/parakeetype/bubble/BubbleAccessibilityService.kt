@@ -100,6 +100,9 @@ class BubbleAccessibilityService : AccessibilityService() {
     /** The field dictation started in; utterances go here even if focus moves meanwhile. */
     private var target: AccessibilityNodeInfo? = null
 
+    /** The field the user hid the bubble for (menu); it shows again on another field. */
+    private var hiddenFor: AccessibilityNodeInfo? = null
+
     /** Undo / redo of the bubble's insertions into [historyField]. */
     private val history = EditHistory()
     private var historyField: AccessibilityNodeInfo? = null
@@ -167,7 +170,8 @@ class BubbleAccessibilityService : AccessibilityService() {
         val field = findEditableFocus()
         // Show on any focused field, also when no keyboard is up (e.g. after Back dismissed it);
         // without a keyboard the bubble sits at its remembered free height.
-        val show = field != null && !keyboard.isOwn
+        if (field == null || field != hiddenFor) hiddenFor = null
+        val show = field != null && !keyboard.isOwn && hiddenFor == null
         updateActions(field)
         if (show) showBubble() else hideBubble()
     }
@@ -186,7 +190,8 @@ class BubbleAccessibilityService : AccessibilityService() {
             BubbleAction.Redo -> if (!ui.canRedo) ui.quickAction = null
             else -> Unit
         }
-        if (ui.menuOpen && !ui.canUndo && !ui.canRedo && !ui.canReinsert) closeMenu()
+        // Hide is always offered, so the menu only closes here once there is no field.
+        if (ui.menuOpen && field == null) closeMenu()
     }
 
     /** Shows [action] beside the mic for [QUICK_ACTION_MS]. */
@@ -201,14 +206,10 @@ class BubbleAccessibilityService : AccessibilityService() {
         ui.quickAction = null
     }
 
-    /** Long-press on the idle mic: every usable action, or a refusal buzz when there is none. */
+    /** Long-press on the idle mic: every usable action (at least Hide). */
     private fun openMenu() {
         if (session != null) return
         updateActions(findEditableFocus())
-        if (!ui.canUndo && !ui.canRedo && !ui.canReinsert) {
-            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
-            return
-        }
         view?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         hideQuickAction()
         ui.menuOpen = true
@@ -237,12 +238,17 @@ class BubbleAccessibilityService : AccessibilityService() {
      * nothing is. From the quick action, the follow-up (Redo after Undo …) is offered briefly.
      */
     private fun onAction(action: BubbleAction) {
+        if (action == BubbleAction.Hide) {
+            hideForField()
+            return
+        }
         val fromMenu = ui.menuOpen
         hideQuickAction()
         val done = when (action) {
             BubbleAction.Undo -> undo()
             BubbleAction.Redo -> redo()
             BubbleAction.Reinsert -> reinsert()
+            BubbleAction.Hide -> false
         }
         if (fromMenu) {
             // undo / redo / reinsert refreshed the availability (and closed an empty menu).
@@ -256,7 +262,18 @@ class BubbleAccessibilityService : AccessibilityService() {
         when (action) {
             BubbleAction.Undo -> if (ui.canRedo) showQuickAction(BubbleAction.Redo)
             BubbleAction.Redo, BubbleAction.Reinsert -> if (ui.canUndo) showQuickAction(BubbleAction.Undo)
+            BubbleAction.Hide -> Unit
         }
+    }
+
+    /** Hides the bubble until another field is focused (menu action). */
+    private fun hideForField() {
+        closeMenu()
+        hideQuickAction()
+        hiddenFor = findEditableFocus()
+        view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        toast(R.string.bubble_hidden_toast)
+        hideBubble()
     }
 
     private class Keyboard(val top: Int?, val isOwn: Boolean)

@@ -225,6 +225,8 @@
     <string name="bubble_start_dictation">Avvia dettatura</string>
     <string name="bubble_more_actions">Annulla, ripristina o reinserisci</string>
     <string name="bubble_close_menu">Chiudi menu</string>
+    <string name="bubble_hide">Nascondi per questo campo</string>
+    <string name="bubble_hidden_toast">Bolla nascosta finché non tocchi un altro campo di testo</string>
     <string name="bubble_stop_dictation">Interrompi dettatura</string>
     <string name="bubble_model_loading">Caricamento del modello vocale</string>
     <string name="bubble_transcribing">Trascrizione in corso</string>

@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Diktálás indítása</string>
     <string name="bubble_more_actions">Visszavonás, ismétlés vagy ismételt beszúrás</string>
     <string name="bubble_close_menu">Menü bezárása</string>
+    <string name="bubble_hide">Elrejtés ehhez a mezőhöz</string>
+    <string name="bubble_hidden_toast">A buborék el van rejtve, amíg egy másik szövegmezőre nem koppint</string>
     <string name="bubble_stop_dictation">Diktálás leállítása</string>
     <string name="bubble_model_loading">Beszédmodell betöltése</string>
     <string name="bubble_transcribing">Átírás folyamatban</string>

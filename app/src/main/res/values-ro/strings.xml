@@ -225,6 +225,8 @@
     <string name="bubble_start_dictation">Începe dictarea</string>
     <string name="bubble_more_actions">Anulează, refă sau inserează din nou</string>
     <string name="bubble_close_menu">Închide meniul</string>
+    <string name="bubble_hide">Ascunde pentru acest câmp</string>
+    <string name="bubble_hidden_toast">Bula este ascunsă până atingi alt câmp de text</string>
     <string name="bubble_stop_dictation">Oprește dictarea</string>
     <string name="bubble_model_loading">Se încarcă modelul de voce</string>
     <string name="bubble_transcribing">Se transcrie</string>

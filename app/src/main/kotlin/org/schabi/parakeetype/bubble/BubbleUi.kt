@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -70,7 +71,7 @@ import org.schabi.parakeetype.R
 enum class BubblePhase { Idle, Listening, Finishing }
 
 /** The actions offered beside the idle mic. */
-enum class BubbleAction { Undo, Redo, Reinsert }
+enum class BubbleAction { Undo, Redo, Reinsert, Hide }
 
 private const val BAR_COUNT = 18
 
@@ -119,7 +120,7 @@ val BUBBLE_SIZE = 56.dp
  * (cancel · live waveform · done) while dictating. While idle, the mic is all there is, except:
  * right after a dictation (or an undo) one small Undo (or Redo) button shows beside it for a few
  * seconds ([BubbleUiState.quickAction]), and a long-press opens a pill with every usable action
- * (undo · redo · re-insert, [BubbleUiState.menuOpen]). Both sit on the screen side of the mic.
+ * (undo · redo · re-insert, and hide for this field, [BubbleUiState.menuOpen]). Both sit on the screen side of the mic.
  */
 @Composable
 fun BubbleContent(
@@ -167,6 +168,7 @@ private fun IdleBubble(
             if (state.canUndo) add(BubbleAction.Undo)
             if (state.canRedo) add(BubbleAction.Redo)
             if (state.canReinsert) add(BubbleAction.Reinsert)
+            add(BubbleAction.Hide)
         }
         else -> listOfNotNull(state.quickAction)
     }
@@ -216,6 +218,7 @@ private fun ActionGroup(actions: List<BubbleAction>, asMenu: Boolean, onAction: 
                     BubbleAction.Undo -> Icons.AutoMirrored.Rounded.Undo to stringResource(R.string.cd_undo_dictation)
                     BubbleAction.Redo -> Icons.AutoMirrored.Rounded.Redo to stringResource(R.string.cd_redo_dictation)
                     BubbleAction.Reinsert -> Icons.Rounded.History to stringResource(R.string.cd_reinsert_transcript)
+                    BubbleAction.Hide -> Icons.Rounded.VisibilityOff to stringResource(R.string.bubble_hide)
                 }
                 ActionBubble(icon, label, floating = !asMenu) { onAction(action) }
             }

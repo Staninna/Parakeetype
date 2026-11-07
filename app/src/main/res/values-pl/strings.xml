@@ -224,6 +224,8 @@
     <string name="bubble_start_dictation">Rozpocznij dyktowanie</string>
     <string name="bubble_more_actions">Cofnij, ponów lub wstaw ponownie</string>
     <string name="bubble_close_menu">Zamknij menu</string>
+    <string name="bubble_hide">Ukryj dla tego pola</string>
+    <string name="bubble_hidden_toast">Dymek ukryty, dopóki nie dotkniesz innego pola tekstowego</string>
     <string name="bubble_stop_dictation">Zatrzymaj dyktowanie</string>
     <string name="bubble_model_loading">Wczytywanie modelu mowy</string>
     <string name="bubble_transcribing">Transkrypcja</string>
