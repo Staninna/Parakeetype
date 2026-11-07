@@ -454,8 +454,6 @@ class BubbleAccessibilityService : AccessibilityService() {
                         onCancel = ::cancelDictation,
                         onMenu = ::openMenu,
                         onAction = ::onAction,
-                        onPauseStep = ::onPauseStep,
-                        onPauseStart = ::onPauseStart,
                     )
                 }
             }.also {
