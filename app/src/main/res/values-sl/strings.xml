@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Premor za %1$d minut</string>
     <string name="bubble_paused_toast">Oblaček začasno skrit za %1$d minut</string>
+    <string name="bubble_history_changed">Ni mogoče razveljaviti ali uveljaviti: besedilo je bilo spremenjeno</string>
     <string name="bubble_stop_dictation">Ustavi narekovanje</string>
     <string name="bubble_model_loading">Nalaganje govornega modela</string>
     <string name="bubble_transcribing">Prepisovanje</string>

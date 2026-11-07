@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Pauzēt uz %1$d minūtēm</string>
     <string name="bubble_paused_toast">Burbulis pauzēts uz %1$d minūtēm</string>
+    <string name="bubble_history_changed">Nevar atsaukt vai atcelt atsaukšanu: teksts ir mainīts</string>
     <string name="bubble_stop_dictation">Apturēt diktēšanu</string>
     <string name="bubble_model_loading">Notiek runas modeļa ielāde</string>
     <string name="bubble_transcribing">Notiek transkripcija</string>

@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d мин</string>
     <string name="bubble_pause_start">Пауза за %1$d минути</string>
     <string name="bubble_paused_toast">Балончето е на пауза за %1$d минути</string>
+    <string name="bubble_history_changed">Не може да се отмени или възстанови: текстът е променен</string>
     <string name="bubble_stop_dictation">Спиране на диктовка</string>
     <string name="bubble_model_loading">Зарежда се речевият модел</string>
     <string name="bubble_transcribing">Преобразуване в текст</string>

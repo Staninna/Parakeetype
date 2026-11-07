@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min.</string>
     <string name="bubble_pause_start">Pristabdyti %1$d min.</string>
     <string name="bubble_paused_toast">Burbulas pristabdytas %1$d min.</string>
+    <string name="bubble_history_changed">Negalima anuliuoti ar grąžinti: tekstas pakeistas</string>
     <string name="bubble_stop_dictation">Stabdyti diktavimą</string>
     <string name="bubble_model_loading">Įkeliamas kalbos modelis</string>
     <string name="bubble_transcribing">Transkribuojama</string>

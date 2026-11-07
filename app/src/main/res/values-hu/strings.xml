@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d perc</string>
     <string name="bubble_pause_start">Szünet %1$d percre</string>
     <string name="bubble_paused_toast">Buborék szüneteltetve %1$d percre</string>
+    <string name="bubble_history_changed">Nem vonható vissza és nem ismételhető: a szöveg megváltozott</string>
     <string name="bubble_stop_dictation">Diktálás leállítása</string>
     <string name="bubble_model_loading">Beszédmodell betöltése</string>
     <string name="bubble_transcribing">Átírás folyamatban</string>

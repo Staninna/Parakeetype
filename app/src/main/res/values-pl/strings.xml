@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Wstrzymaj na %1$d min</string>
     <string name="bubble_paused_toast">Dymek wstrzymany na %1$d min</string>
+    <string name="bubble_history_changed">Nie można cofnąć ani ponowić: tekst został zmieniony</string>
     <string name="bubble_stop_dictation">Zatrzymaj dyktowanie</string>
     <string name="bubble_model_loading">Wczytywanie modelu mowy</string>
     <string name="bubble_transcribing">Transkrypcja</string>

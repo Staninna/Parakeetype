@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Keskeytä %1$d minuutiksi</string>
     <string name="bubble_paused_toast">Kupla keskeytetty %1$d minuutiksi</string>
+    <string name="bubble_history_changed">Ei voi kumota tai tehdä uudelleen: tekstiä on muutettu</string>
     <string name="bubble_stop_dictation">Lopeta sanelu</string>
     <string name="bubble_model_loading">Ladataan puhemallia</string>
     <string name="bubble_transcribing">Puretaan tekstiksi</string>

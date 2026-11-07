@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d λεπ.</string>
     <string name="bubble_pause_start">Παύση για %1$d λεπτά</string>
     <string name="bubble_paused_toast">Η φούσκα σε παύση για %1$d λεπτά</string>
+    <string name="bubble_history_changed">Δεν είναι δυνατή η αναίρεση ή επανάληψη: το κείμενο άλλαξε</string>
     <string name="bubble_stop_dictation">Διακοπή υπαγόρευσης</string>
     <string name="bubble_model_loading">Φόρτωση του μοντέλου ομιλίας</string>
     <string name="bubble_transcribing">Μεταγραφή</string>

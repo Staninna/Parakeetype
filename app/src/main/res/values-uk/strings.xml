@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d хв</string>
     <string name="bubble_pause_start">Пауза на %1$d хв</string>
     <string name="bubble_paused_toast">Бульбашку призупинено на %1$d хв</string>
+    <string name="bubble_history_changed">Не вдається скасувати чи повернути: текст змінено</string>
     <string name="bubble_stop_dictation">Зупинити диктування</string>
     <string name="bubble_model_loading">Завантаження мовленнєвої моделі</string>
     <string name="bubble_transcribing">Розшифрування</string>

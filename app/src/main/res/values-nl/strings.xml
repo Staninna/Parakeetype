@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">%1$d minuten pauzeren</string>
     <string name="bubble_paused_toast">Bubbel %1$d minuten gepauzeerd</string>
+    <string name="bubble_history_changed">Kan niet ongedaan maken of opnieuw uitvoeren: de tekst is gewijzigd</string>
     <string name="bubble_stop_dictation">Dicteren stoppen</string>
     <string name="bubble_model_loading">Spraakmodel wordt geladen</string>
     <string name="bubble_transcribing">Bezig met uitschrijven</string>

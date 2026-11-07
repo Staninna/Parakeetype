@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Pozastavit na %1$d minut</string>
     <string name="bubble_paused_toast">Bublina pozastavena na %1$d minut</string>
+    <string name="bubble_history_changed">Nelze vrátit ani znovu provést: text byl změněn</string>
     <string name="bubble_stop_dictation">Zastavit diktování</string>
     <string name="bubble_model_loading">Načítání modelu řeči</string>
     <string name="bubble_transcribing">Přepis</string>

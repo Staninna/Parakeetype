@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Peata %1$d minutiks</string>
     <string name="bubble_paused_toast">Mull on %1$d minutiks peatatud</string>
+    <string name="bubble_history_changed">Ei saa tagasi võtta ega uuesti teha: tekst on muutunud</string>
     <string name="bubble_stop_dictation">Peata dikteerimine</string>
     <string name="bubble_model_loading">Kõnemudeli laadimine</string>
     <string name="bubble_transcribing">Transkribeerimine</string>

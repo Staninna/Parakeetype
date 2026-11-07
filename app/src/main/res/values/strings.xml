@@ -254,6 +254,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Pause for %1$d minutes</string>
     <string name="bubble_paused_toast">Bubble paused for %1$d minutes</string>
+    <string name="bubble_history_changed">Can\'t undo or redo: the text was changed</string>
     <string name="bubble_stop_dictation">Stop dictation</string>
     <string name="bubble_model_loading">Loading the speech model</string>
     <string name="bubble_transcribing">Transcribing</string>

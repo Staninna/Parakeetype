@@ -233,6 +233,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Pausar %1$d minutos</string>
     <string name="bubble_paused_toast">Burbuja en pausa durante %1$d minutos</string>
+    <string name="bubble_history_changed">No se puede deshacer ni rehacer: el texto ha cambiado</string>
     <string name="bubble_stop_dictation">Detener dictado</string>
     <string name="bubble_model_loading">Cargando el modelo de voz</string>
     <string name="bubble_transcribing">Transcribiendo</string>

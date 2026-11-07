@@ -67,9 +67,6 @@ private const val MOVE_ANIMATION_MS = 180L
 /** How long Undo (after a dictation) or Redo (after an undo) stays beside the mic. */
 private const val QUICK_ACTION_MS = 4_000L
 
-/** The long-press menu closes on its own after this long without a touch. */
-private const val MENU_TIMEOUT_MS = 10_000L
-
 /** How long the menu card's fade-out runs before its window goes. */
 private const val MENU_EXIT_MS = 170L
 
@@ -94,7 +91,6 @@ class BubbleAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = Runnable { updateBubble() }
     private val hideQuickActionRunnable = Runnable { ui.quickAction = null }
-    private val closeMenuRunnable = Runnable { closeMenu() }
     private val removeMenuRunnable = Runnable { if (!ui.menuOpen) removeMenuWindow() }
 
     /** The long-press menu's own overlay window (so the mic's window never resizes for it). */
@@ -239,12 +235,10 @@ class BubbleAccessibilityService : AccessibilityService() {
         hideQuickAction()
         ui.menuOpen = true
         showMenuWindow()
-        restartMenuTimeout()
     }
 
     /** Fades the card out, then removes its window. */
     private fun closeMenu() {
-        handler.removeCallbacks(closeMenuRunnable)
         if (!ui.menuOpen) return
         ui.menuOpen = false
         ui.menuShown = false
@@ -333,12 +327,6 @@ class BubbleAccessibilityService : AccessibilityService() {
         menuAttached = false
     }
 
-    /** Keeps an open menu up for another [MENU_TIMEOUT_MS] after an interaction. */
-    private fun restartMenuTimeout() {
-        handler.removeCallbacks(closeMenuRunnable)
-        if (ui.menuOpen) handler.postDelayed(closeMenuRunnable, MENU_TIMEOUT_MS)
-    }
-
     /** − / + on the menu's pause row: the next shorter / longer length, remembered for next time. */
     private fun onPauseStep(direction: Int) {
         val index = PAUSE_STEPS.indexOf(ui.pauseMinutes).coerceAtLeast(0)
@@ -350,7 +338,6 @@ class BubbleAccessibilityService : AccessibilityService() {
             prefs().edit().putInt(PREF_PAUSE_MINUTES, next).apply()
             menuView?.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         }
-        restartMenuTimeout()
     }
 
     /** Hides the bubble everywhere for the chosen length; it comes back on its own. */
@@ -395,11 +382,8 @@ class BubbleAccessibilityService : AccessibilityService() {
             BubbleAction.Reinsert -> reinsert()
             BubbleAction.Hide -> false
         }
-        if (fromMenu) {
-            // undo / redo / reinsert refreshed the availability (and closed an empty menu).
-            restartMenuTimeout()
-            return
-        }
+        // From the menu it stays open; undo / redo / reinsert refreshed its rows.
+        if (fromMenu) return
         if (!done) return
         when (action) {
             BubbleAction.Undo -> if (ui.canRedo) showQuickAction(BubbleAction.Redo)
@@ -512,7 +496,6 @@ class BubbleAccessibilityService : AccessibilityService() {
         moveAnimator?.cancel()
         ui.menuOpen = false
         ui.menuShown = false
-        handler.removeCallbacks(closeMenuRunnable)
         removeMenuWindow()
         val v = view ?: return
         if (!attached) return
@@ -839,6 +822,7 @@ class BubbleAccessibilityService : AccessibilityService() {
             // The field changed since (or refused): leave it alone.
             history.clear()
             view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+            toast(R.string.bubble_history_changed)
         } else {
             view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
@@ -855,6 +839,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         if (!done) {
             history.clear()
             view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+            toast(R.string.bubble_history_changed)
         } else {
             view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }

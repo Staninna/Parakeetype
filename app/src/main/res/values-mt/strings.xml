@@ -232,6 +232,7 @@
     <string name="bubble_pause_minutes">%1$d min</string>
     <string name="bubble_pause_start">Waqqaf għal %1$d minuta</string>
     <string name="bubble_paused_toast">Il-bużżieqa waqfet għal %1$d minuta</string>
+    <string name="bubble_history_changed">Ma jistax jitneħħa jew isir mill-ġdid: it-test inbidel</string>
     <string name="bubble_stop_dictation">Waqqaf id-dettat</string>
     <string name="bubble_model_loading">Qed jitgħabba l-mudell tad-diskors</string>
     <string name="bubble_transcribing">Qed jiġi traskritt</string>

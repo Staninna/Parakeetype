@@ -258,6 +258,7 @@
     <string name="bubble_pause_minutes">%1$d Min.</string>
     <string name="bubble_pause_start">%1$d Minuten pausieren</string>
     <string name="bubble_paused_toast">Blase für %1$d Minuten pausiert</string>
+    <string name="bubble_history_changed">Rückgängig/Wiederherstellen nicht möglich: Der Text wurde geändert</string>
     <string name="bubble_stop_dictation">Diktat stoppen</string>
     <string name="bubble_model_loading">Sprachmodell wird geladen</string>
     <string name="bubble_transcribing">Wird transkribiert</string>
