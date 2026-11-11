@@ -11,6 +11,7 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.speech.SpeechRecognizer
 import android.util.Log
 import android.view.Gravity
@@ -39,8 +40,26 @@ import org.schabi.parakeetype.ui.theme.ParakeetypeKeyboardTheme
 
 private const val TAG = "BubbleService"
 
-/** Debounce for re-checking the bubble after accessibility events. */
-private const val UPDATE_DELAY_MS = 150L
+/**
+ * Delay before re-checking the bubble after an accessibility event. Further events do not push
+ * the check back (a plain debounce never ran while the user kept typing), so this is the
+ * longest the bubble lags behind.
+ */
+private const val UPDATE_DELAY_MS = 100L
+
+/**
+ * A second check after the last event: window and focus changes (the keyboard sliding in, an
+ * activity starting) often settle without a further event, and the first check saw them midway.
+ */
+private const val SETTLE_DELAY_MS = 450L
+
+/**
+ * How long "nothing to show on" must persist before the bubble is removed. A single check can
+ * miss the focused field while windows change (the field's window is replaced, the focus moves
+ * through a container, our own overlay is added); removing the bubble on it made it flash and
+ * vanish while the keyboard stayed up.
+ */
+private const val HIDE_CONFIRM_MS = 300L
 
 private const val PREFS = "bubble"
 private const val PREF_RIGHT = "docked_right"
@@ -78,6 +97,17 @@ class BubbleAccessibilityService : AccessibilityService() {
     private val scope = MainScope()
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = Runnable { updateBubble() }
+    private val settleRunnable = Runnable { updateBubble() }
+
+    /** Since when the checks have said "hide" (uptime ms), or `null` while they say "show". */
+    private var hideSince: Long? = null
+
+    /**
+     * The last editable field an event came from (focus, click, cursor). Apps whose text fields
+     * are virtual views (Compose, WebView, GeckoView) do not always answer an input-focus query
+     * with the field itself, so this is the fallback for finding it.
+     */
+    private var lastEditable: AccessibilityNodeInfo? = null
 
     private lateinit var windowManager: WindowManager
     private lateinit var inference: InferenceConnection
@@ -114,8 +144,29 @@ class BubbleAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        handler.removeCallbacks(updateRunnable)
-        handler.postDelayed(updateRunnable, UPDATE_DELAY_MS)
+        if (event != null) rememberEditable(event)
+        scheduleUpdate()
+    }
+
+    private fun scheduleUpdate() {
+        if (!handler.hasCallbacks(updateRunnable)) handler.postDelayed(updateRunnable, UPDATE_DELAY_MS)
+        handler.removeCallbacks(settleRunnable)
+        handler.postDelayed(settleRunnable, SETTLE_DELAY_MS)
+    }
+
+    private fun rememberEditable(event: AccessibilityEvent) {
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_VIEW_FOCUSED, AccessibilityEvent.TYPE_VIEW_CLICKED -> Unit
+            // Fires on every keystroke: only fetch the source while no field is known.
+            AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED -> if (lastEditable != null) return
+            else -> return
+        }
+        val source = try {
+            event.source
+        } catch (e: Exception) {
+            null
+        } ?: return
+        if (isUsableField(source)) lastEditable = source
     }
 
     override fun onInterrupt() = Unit
@@ -140,14 +191,50 @@ class BubbleAccessibilityService : AccessibilityService() {
             // Navigating away mid-dictation (no text field focused any more) would otherwise
             // leave this segmented session recording with no silence timeout; cancel it.
             // Otherwise keep the bubble and follow the keyboard (if any) while dictating.
-            if (findEditableFocus() == null) cancelDictation() else placeBubble()
+            val stillThere = findEditableFocus() != null || target?.let { isStillVisible(it) } == true
+            if (stillThere) {
+                hideSince = null
+                placeBubble()
+            } else if (confirmHide()) {
+                cancelDictation()
+            }
             return
         }
-        val field = findEditableFocus()
-        // Show on any focused field, also when no keyboard is up (e.g. after Back dismissed it);
-        // without a keyboard the bubble sits at its remembered free height.
-        val show = field != null && !keyboard.isOwn
-        if (show) showBubble() else hideBubble()
+        val show = when {
+            // Our own keyboard has its own talk button.
+            keyboard.isOwn -> false
+            // Never offer dictation into a password field, nor over Parakeetype itself.
+            focusIsPasswordOrOwn() -> false
+            // Show on any focused field, also when no keyboard is up (e.g. after Back dismissed
+            // it); without a keyboard the bubble sits at its remembered free height.
+            findEditableFocus() != null -> true
+            // Another keyboard is up, so the user is typing somewhere, even when the field
+            // could not be found (yet): the bubble belongs there.
+            else -> keyboard.top != null
+        }
+        if (show) {
+            hideSince = null
+            showBubble()
+        } else if (!attached || keyboard.isOwn || confirmHide()) {
+            hideSince = null
+            hideBubble()
+        }
+    }
+
+    /**
+     * `true` once "hide" has been seen for [HIDE_CONFIRM_MS]; until then it keeps the bubble and
+     * schedules the confirming check.
+     */
+    private fun confirmHide(): Boolean {
+        val now = SystemClock.uptimeMillis()
+        val since = hideSince ?: now.also { hideSince = it }
+        if (now - since >= HIDE_CONFIRM_MS) {
+            hideSince = null
+            return true
+        }
+        handler.removeCallbacks(updateRunnable)
+        handler.postDelayed(updateRunnable, HIDE_CONFIRM_MS - (now - since))
+        return false
     }
 
     private class Keyboard(val top: Int?, val isOwn: Boolean)
@@ -170,22 +257,60 @@ class BubbleAccessibilityService : AccessibilityService() {
         Keyboard(null, false)
     }
 
-    /**
-     * The focused, editable, non-password field of another app, or `null`. Looks at the
-     * input focus across windows first, then inside the active window.
-     */
-    private fun findEditableFocus(): AccessibilityNodeInfo? = try {
-        val candidates = sequenceOf(
+    /** Editable, not a password, not in Parakeetype itself. */
+    private fun isUsableField(node: AccessibilityNodeInfo): Boolean =
+        node.isEditable && !node.isPassword && node.packageName?.toString() != packageName
+
+    /** The input-focused nodes, most authoritative first: the system's, then each window's. */
+    private fun focusCandidates(): Sequence<AccessibilityNodeInfo> {
+        val global = sequenceOf(
             { findFocus(AccessibilityNodeInfo.FOCUS_INPUT) },
             { rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) },
         )
-        candidates.mapNotNull { it() }.firstOrNull { node ->
-            node.isEditable && !node.isPassword && node.packageName?.toString() != packageName
+        // The system's input-focus lookup follows a single "focused window", which is briefly
+        // wrong while windows change; ask every app window itself as well.
+        val perWindow = sequence {
+            val appWindows = (try { windows } catch (e: Exception) { emptyList() })
+                .filter {
+                    it.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+                        it.type != AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY
+                }
+                .sortedByDescending { (if (it.isFocused) 2 else 0) + (if (it.isActive) 1 else 0) }
+            for (window in appWindows) yield { window.root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }
         }
-    } catch (e: Exception) {
-        Log.w(TAG, "Could not find the focused field", e)
-        null
+        return (global + perWindow).mapNotNull { lookup ->
+            try {
+                lookup()
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not query the input focus", e)
+                null
+            }
+        }
     }
+
+    /**
+     * The focused, editable, non-password field of another app, or `null`. Asks the system's
+     * input focus, then every window, then falls back to the last field an event came from if
+     * it still has focus.
+     */
+    private fun findEditableFocus(): AccessibilityNodeInfo? =
+        focusCandidates().firstOrNull { isUsableField(it) }
+            ?: lastEditable?.takeIf { isStillFocused(it) }
+
+    /** Whether the input focus is on a password field or anywhere in Parakeetype itself. */
+    private fun focusIsPasswordOrOwn(): Boolean {
+        val focused = focusCandidates().firstOrNull() ?: return false
+        return focused.isPassword || focused.packageName?.toString() == packageName
+    }
+
+    private fun isStillVisible(node: AccessibilityNodeInfo): Boolean = try {
+        node.refresh() && node.isVisibleToUser
+    } catch (e: Exception) {
+        false
+    }
+
+    private fun isStillFocused(node: AccessibilityNodeInfo): Boolean =
+        isStillVisible(node) && node.isFocused && isUsableField(node)
 
     private fun showBubble() {
         if (!attached) {
@@ -355,7 +480,10 @@ class BubbleAccessibilityService : AccessibilityService() {
             startActivity(Intent(this, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
+        // Right after the keyboard opened, the last field an event came from is the best guess
+        // when the focus query does not return it (virtual text fields, see [lastEditable]).
         val field = findEditableFocus()
+            ?: lastEditable?.takeIf { keyboardTop != null && isStillVisible(it) && isUsableField(it) }
         if (field == null) {
             toast(R.string.bubble_no_field)
             return
