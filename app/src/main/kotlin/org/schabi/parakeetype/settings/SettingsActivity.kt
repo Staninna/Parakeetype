@@ -15,7 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -91,13 +93,28 @@ private fun SettingsNavHost(navController: NavHostController) {
         SettingsRoutes.PREF_SPEECH -> stringResource(R.string.nav_title_speech)
         SettingsRoutes.PREF_TOOLS -> stringResource(R.string.nav_title_tools)
         SettingsRoutes.REPLACEMENTS -> stringResource(R.string.nav_title_replacements)
+        SettingsRoutes.CALIBRATION -> stringResource(R.string.pref_mic_calibrate)
         else -> stringResource(R.string.app_name)
     }
 
+    // Large title that collapses on scroll, as in the Settings app. A fresh state per page,
+    // so a page doesn't open with the title collapsed by the previous one.
+    val topBarState = remember(currentRoute) { TopAppBarState(-Float.MAX_VALUE, 0f, 0f) }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topBarState)
+    // Every page is drawn like a Settings-app sub page on surfaceContainer, and so is its bar.
+    val barColor = MaterialTheme.colorScheme.surfaceContainer
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = barColor,
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = { Text(title) },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = barColor,
+                    scrolledContainerColor = barColor,
+                ),
                 navigationIcon = {
                     if (currentRoute != SettingsRoutes.HOME) {
                         IconButton(onClick = { navController.popBackStack() }) {

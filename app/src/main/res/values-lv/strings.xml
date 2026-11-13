@@ -24,8 +24,6 @@
     <string name="action_open_parakeetype">Atvērt Parakeetype</string>
 
     <!-- Common states -->
-    <string name="state_enabled">Iespējots</string>
-    <string name="state_disabled">Atspējots</string>
 
     <!-- Content descriptions -->
     <string name="cd_back">Atpakaļ</string>
@@ -83,7 +81,7 @@
     <string name="pref_trigger_hold">Turēt, lai runātu</string>
     <string name="pref_trigger_tap_toggle">Pieskarties, lai pārslēgtu</string>
     <string name="pref_instant_mode_title">Tūlītējais režīms</string>
-    <string name="pref_instant_mode_subtitle">Sāk klausīties, tiklīdz pārslēdzaties uz Parakeetype, piem., ar citas tastatūras mikrofona taustiņu. Kad beidzat runāt, teksts tiek ievadīts un notiek pārslēgšanās atpakaļ uz šo tastatūru. Lai paliktu Parakeetype, sesijas laikā pieskarieties runāšanas pogai.</string>
+    <string name="pref_instant_mode_subtitle">Sāk klausīties, tiklīdz pārslēdzaties uz Parakeetype, piem., ar citas tastatūras mikrofona taustiņu. Kad beidzat runāt, teksts tiek ievadīts un notiek pārslēgšanās atpakaļ uz šo tastatūru. Arī ar runāšanas pogu sākti ieraksti pārslēdzas atpakaļ, tiklīdz to teksts ir ievadīts.</string>
     <string name="pref_delete_title">Dzēšanas poga</string>
     <string name="pref_delete_subtitle">Ko dzēš tastatūras atkritnes poga. „Pēdējais teikums“ noņem tikai pēdējo teikumu pirms kursora, lai garš dokuments nekad netiktu nejauši izdzēsts.</string>
     <string name="pref_delete_all">Viss teksts</string>
@@ -101,13 +99,10 @@
     <string name="pref_vad_subtitle">Izmanto Silero VAD, lai pirms transkripcijas atfiltrētu klusumu un fona troksni. Atspējojiet tikai tad, ja VAD nogriež jūsu runas sākumu vai sniedz tukšus rezultātus.</string>
     <string name="pref_postprocessing_title">Transkripta pēcapstrāde</string>
     <string name="pref_postprocessing_subtitle">Noņem pildvārdus (ē, ēm, hmm), apvieno stostīšanos un notīra atkārtotas frāzes, ko modelis dažkārt halucinē. Atspējojiet, lai saņemtu precīzu, neapstrādātu modeļa izvadi — noderīgi, lai noskaidrotu, vai tīrīšana ir vainojama izlaistos vai mainītos vārdos.</string>
-    <string name="pref_postprocessing_disabled_raw">Atspējota (neapstrādāta izvade)</string>
     <string name="pref_keep_loaded_title">Paturēt modeli ielādētu</string>
     <string name="pref_keep_loaded_subtitle">Patur runas modeli atmiņā, kamēr izmantojat citu tastatūru, lai diktēšana būtu uzreiz gatava, kad pārslēdzaties atpakaļ, un modelis nebūtu jāielādē no jauna. Darbojas kā priekšplāna pakalpojums ar pastāvīgu paziņojumu un aizņem aptuveni 700 MB RAM.</string>
     <string name="pref_diagnostics_title">Konveijera diagnostika</string>
     <string name="pref_diagnostics_subtitle">Rāda tastatūrā tiešraides emblēmu ar loga apgriešanas, līdzinājuma atkopšanas un atmesto tukšo soļu skaitītājiem. Noderīgi konveijera problēmu diagnosticēšanai; pēc noklusējuma izslēgta.</string>
-    <string name="pref_diagnostics_visible">Redzama</string>
-    <string name="pref_diagnostics_hidden">Paslēpta</string>
     <string name="replacements_description">Aizstāj vārdus vai frāzes jūsu transkripcijās, piemēram, vārdu, ko modelis vienmēr uzraksta nepareizi. Atbilst tikai veseliem vārdiem un neņem vērā lielos un mazos burtus. Tiek piemērota transkripcijas pēcapstrādes laikā.</string>
     <string name="replacements_add">Pievienot aizstāšanu</string>
     <string name="replacements_edit">Rediģēt aizstāšanu</string>

@@ -20,19 +20,12 @@ import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -137,117 +130,118 @@ private fun HomeScreenContent(
     isBubbleEnabled: Boolean = false,
     onOpenAccessibilitySettings: () -> Unit = {},
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.home_section_setup),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+    SettingsColumn {
+        SectionHeader(stringResource(R.string.home_section_setup))
+        SettingsGroup(
+            listOf(
+                // 1. IME enabled
+                {
+                    SettingsItem(
+                        icon = if (isImeEnabled) Icons.Rounded.Keyboard else Icons.Rounded.Warning,
+                        title = if (isImeEnabled) stringResource(R.string.home_ime_enabled)
+                        else stringResource(R.string.home_ime_not_enabled),
+                        subtitle = if (isImeEnabled) stringResource(R.string.home_ime_enabled_subtitle)
+                        else stringResource(R.string.home_ime_not_enabled_subtitle),
+                        onClickLabel = stringResource(R.string.action_open_settings),
+                        onClick = if (!isImeEnabled) onOpenImeSettings else null,
+                        shape = it,
+                    )
+                },
+                // 2. Microphone permission
+                {
+                    SettingsItem(
+                        icon = if (hasMicPermission) Icons.Rounded.Mic else Icons.Rounded.MicOff,
+                        title = if (hasMicPermission) stringResource(R.string.home_mic_granted)
+                        else stringResource(R.string.home_mic_required),
+                        subtitle = if (hasMicPermission) stringResource(R.string.home_mic_granted_subtitle)
+                        else stringResource(R.string.home_mic_required_subtitle),
+                        onClickLabel = stringResource(R.string.action_grant_permission),
+                        onClick = if (!hasMicPermission) onRequestMicPermission else null,
+                        shape = it,
+                    )
+                },
+                // 3. Model installed - always clickable so the model screen stays reachable
+                {
+                    SettingsItem(
+                        icon = if (isModelReady) Icons.Rounded.CheckCircle else Icons.Rounded.CloudDownload,
+                        title = if (isModelReady) stringResource(R.string.home_model_ready)
+                        else stringResource(R.string.home_model_not_downloaded),
+                        subtitle = if (isModelReady) stringResource(R.string.home_model_ready_subtitle)
+                        else stringResource(R.string.home_model_not_downloaded_subtitle),
+                        onClickLabel = if (isModelReady) stringResource(R.string.action_manage)
+                        else stringResource(R.string.action_download),
+                        onClick = onNavigateToModel,
+                        shape = it,
+                    )
+                },
+                // 4. System voice input - optional, lets other apps use Parakeetype for speech-to-text
+                {
+                    SettingsItem(
+                        icon = if (isDefaultRecognizer) Icons.Rounded.RecordVoiceOver else Icons.Rounded.Warning,
+                        title = if (isDefaultRecognizer) stringResource(R.string.home_recognizer_default)
+                        else stringResource(R.string.home_recognizer_not_default),
+                        subtitle = when {
+                            isDefaultRecognizer -> stringResource(R.string.home_recognizer_default_subtitle)
+                            VOICE_INPUT_IN_LANGUAGE_SETTINGS -> stringResource(R.string.home_recognizer_not_default_speech_subtitle)
+                            else -> stringResource(R.string.home_recognizer_not_default_subtitle)
+                        },
+                        onClickLabel = stringResource(R.string.action_open_settings),
+                        onClick = if (!isDefaultRecognizer) onOpenVoiceInputSettings else null,
+                        shape = it,
+                    )
+                },
+                // 5. Floating dictation bubble - optional, dictate while using another keyboard
+                {
+                    SettingsItem(
+                        icon = if (isBubbleEnabled) Icons.Rounded.Mic else Icons.Rounded.MicOff,
+                        title = if (isBubbleEnabled) stringResource(R.string.home_bubble_enabled)
+                        else stringResource(R.string.home_bubble_disabled),
+                        subtitle = if (isBubbleEnabled) stringResource(R.string.home_bubble_enabled_subtitle)
+                        else stringResource(R.string.home_bubble_disabled_subtitle),
+                        onClickLabel = stringResource(R.string.action_open_settings),
+                        onClick = if (!isBubbleEnabled) onOpenAccessibilitySettings else null,
+                        shape = it,
+                    )
+                },
+            ),
         )
 
-        // 1. IME enabled
-        StatusRow(
-            icon = if (isImeEnabled) Icons.Rounded.Keyboard else Icons.Rounded.Warning,
-            iconTint = if (isImeEnabled) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.error,
-            title = if (isImeEnabled) stringResource(R.string.home_ime_enabled)
-            else stringResource(R.string.home_ime_not_enabled),
-            subtitle = if (isImeEnabled) stringResource(R.string.home_ime_enabled_subtitle)
-            else stringResource(R.string.home_ime_not_enabled_subtitle),
-            actionLabel = stringResource(R.string.action_open_settings),
-            action = if (!isImeEnabled) onOpenImeSettings else null,
-        )
-
-        // 2. Microphone permission
-        StatusRow(
-            icon = if (hasMicPermission) Icons.Rounded.Mic else Icons.Rounded.MicOff,
-            iconTint = if (hasMicPermission) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.error,
-            title = if (hasMicPermission) stringResource(R.string.home_mic_granted)
-            else stringResource(R.string.home_mic_required),
-            subtitle = if (hasMicPermission) stringResource(R.string.home_mic_granted_subtitle)
-            else stringResource(R.string.home_mic_required_subtitle),
-            actionLabel = stringResource(R.string.action_grant_permission),
-            action = if (!hasMicPermission) onRequestMicPermission else null,
-        )
-
-        // 3. Model installed - always show an action so the model screen stays reachable
-        StatusRow(
-            icon = if (isModelReady) Icons.Rounded.CheckCircle else Icons.Rounded.CloudDownload,
-            iconTint = if (isModelReady) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.error,
-            title = if (isModelReady) stringResource(R.string.home_model_ready)
-            else stringResource(R.string.home_model_not_downloaded),
-            subtitle = if (isModelReady) stringResource(R.string.home_model_ready_subtitle)
-            else stringResource(R.string.home_model_not_downloaded_subtitle),
-            actionLabel = if (isModelReady) stringResource(R.string.action_manage)
-            else stringResource(R.string.action_download),
-            action = onNavigateToModel,
-        )
-
-        // 4. System voice input - optional, lets other apps use Parakeetype for speech-to-text
-        StatusRow(
-            icon = if (isDefaultRecognizer) Icons.Rounded.RecordVoiceOver else Icons.Rounded.Warning,
-            iconTint = if (isDefaultRecognizer) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.error,
-            title = if (isDefaultRecognizer) stringResource(R.string.home_recognizer_default)
-            else stringResource(R.string.home_recognizer_not_default),
-            subtitle = when {
-                isDefaultRecognizer -> stringResource(R.string.home_recognizer_default_subtitle)
-                VOICE_INPUT_IN_LANGUAGE_SETTINGS -> stringResource(R.string.home_recognizer_not_default_speech_subtitle)
-                else -> stringResource(R.string.home_recognizer_not_default_subtitle)
-            },
-            actionLabel = stringResource(R.string.action_open_settings),
-            action = if (!isDefaultRecognizer) onOpenVoiceInputSettings else null,
-        )
-
-        // 5. Floating dictation bubble - optional, dictate while using another keyboard
-        StatusRow(
-            icon = if (isBubbleEnabled) Icons.Rounded.Mic else Icons.Rounded.MicOff,
-            iconTint = if (isBubbleEnabled) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            title = if (isBubbleEnabled) stringResource(R.string.home_bubble_enabled)
-            else stringResource(R.string.home_bubble_disabled),
-            subtitle = if (isBubbleEnabled) stringResource(R.string.home_bubble_enabled_subtitle)
-            else stringResource(R.string.home_bubble_disabled_subtitle),
-            actionLabel = stringResource(R.string.action_open_settings),
-            action = if (!isBubbleEnabled) onOpenAccessibilitySettings else null,
-        )
-
-        Spacer(Modifier.height(8.dp))
-        HorizontalDivider()
-        Spacer(Modifier.height(4.dp))
-
-        Text(
-            text = stringResource(R.string.home_section_configuration),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        ConfigurationButton(
-            icon = Icons.Rounded.Mic,
-            label = stringResource(R.string.home_pref_input),
-            onClick = onNavigateToInput,
-        )
-        ConfigurationButton(
-            icon = Icons.Rounded.Keyboard,
-            label = stringResource(R.string.home_pref_speech),
-            onClick = onNavigateToSpeech,
-        )
-        ConfigurationButton(
-            icon = Icons.Rounded.FindReplace,
-            label = stringResource(R.string.home_pref_replacements),
-            onClick = onNavigateToReplacements,
-        )
-        ConfigurationButton(
-            icon = Icons.Rounded.Settings,
-            label = stringResource(R.string.home_pref_tools),
-            onClick = onNavigateToTools,
+        SectionHeader(stringResource(R.string.home_section_configuration))
+        SettingsGroup(
+            listOf(
+                {
+                    SettingsItem(
+                        icon = Icons.Rounded.Mic,
+                        title = stringResource(R.string.home_pref_input),
+                        shape = it,
+                        onClick = onNavigateToInput,
+                    )
+                },
+                {
+                    SettingsItem(
+                        icon = Icons.Rounded.Keyboard,
+                        title = stringResource(R.string.home_pref_speech),
+                        shape = it,
+                        onClick = onNavigateToSpeech,
+                    )
+                },
+                {
+                    SettingsItem(
+                        icon = Icons.Rounded.FindReplace,
+                        title = stringResource(R.string.home_pref_replacements),
+                        shape = it,
+                        onClick = onNavigateToReplacements,
+                    )
+                },
+                {
+                    SettingsItem(
+                        icon = Icons.Rounded.Settings,
+                        title = stringResource(R.string.home_pref_tools),
+                        shape = it,
+                        onClick = onNavigateToTools,
+                    )
+                },
+            ),
         )
     }
 }
@@ -305,64 +299,6 @@ private fun openVoiceInputSettings(context: Context) {
             return
         } catch (e: ActivityNotFoundException) {
             // try the next one
-        }
-    }
-}
-
-/** A labelled outlined button in the Configuration section of the home screen. */
-@Composable
-private fun ConfigurationButton(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(label)
-    }
-}
-
-@Composable
-private fun StatusRow(
-    icon: ImageVector,
-    iconTint: Color,
-    title: String,
-    subtitle: String,
-    actionLabel: String,
-    action: (() -> Unit)?,
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(32.dp),
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (action != null) {
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = action) { Text(actionLabel) }
-            }
         }
     }
 }
@@ -429,34 +365,3 @@ private fun HomeScreenPartialSetupPreview() {
         )
     }
 }
-
-@Preview(showBackground = true, name = "Status Row · Done (no action)")
-@Composable
-private fun StatusRowDonePreview() {
-    ParakeetypeTheme {
-        StatusRow(
-            icon = Icons.Rounded.CheckCircle,
-            iconTint = Color.Unspecified,
-            title = "Keyboard enabled",
-            subtitle = "Parakeetype is in the keyboard list.",
-            actionLabel = "Open Settings",
-            action = null,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Status Row · Pending (with action)")
-@Composable
-private fun StatusRowPendingPreview() {
-    ParakeetypeTheme {
-        StatusRow(
-            icon = Icons.Rounded.Warning,
-            iconTint = Color.Unspecified,
-            title = "Keyboard not enabled",
-            subtitle = "Add Parakeetype in system keyboard settings.",
-            actionLabel = "Open Settings",
-            action = {},
-        )
-    }
-}
-
