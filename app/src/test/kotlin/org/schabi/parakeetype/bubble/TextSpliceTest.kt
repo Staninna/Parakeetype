@@ -74,4 +74,46 @@ class TextSpliceTest {
     fun `paste text replacing the whole selection has no extra spaces`() {
         assertEquals("Hello", pasteText("world", 0, 5, "Hello"))
     }
+
+    @Test
+    fun `paste text without a cursor follows the same spacing as a splice at the end`() {
+        assertEquals("Hello", pasteText("world ", -1, -1, "Hello"))
+        assertEquals("note", pasteText("(", -1, -1, "note"))
+    }
+
+    @Test
+    fun `blank paste text is empty`() {
+        assertEquals("", pasteText("world", 2, 1, "  "))
+    }
+
+    @Test
+    fun `field text is the text while the field has a caret`() {
+        assertEquals("Hello", fieldText("Hello", showingHint = false, selStart = 5, selEnd = 5))
+    }
+
+    @Test
+    fun `field text of a field showing its hint is empty`() {
+        assertEquals("", fieldText("Message", showingHint = true, selStart = 0, selEnd = 0))
+    }
+
+    @Test
+    fun `text without a caret is a leaked placeholder`() {
+        assertEquals("", fieldText("Message", showingHint = false, selStart = -1, selEnd = -1))
+    }
+
+    @Test
+    fun `text equal to a hint still counts when it has a caret`() {
+        assertEquals("Search", fieldText("Search", showingHint = false, selStart = 6, selEnd = 6))
+    }
+
+    @Test
+    fun `missing text is empty`() {
+        assertEquals("", fieldText(null, showingHint = false, selStart = 0, selEnd = 0))
+    }
+
+    @Test
+    fun `a leaked placeholder is not spliced into the transcript`() {
+        val current = fieldText("Message", showingHint = false, selStart = -1, selEnd = -1)
+        assertEquals(Splice("hello", 5), spliceTranscript(current, -1, -1, "hello"))
+    }
 }
