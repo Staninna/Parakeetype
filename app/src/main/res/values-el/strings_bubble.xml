@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork-only strings of the floating dictation bubble (bubble/), kept out of strings.xml so
+     upstream syncs never conflict on them. -->
+<resources>
+    <string name="bubble_service_label">Φυσαλίδα υπαγόρευσης Parakeetype</string>
+    <string name="bubble_service_description">Εμφανίζει ένα πλωτό κουμπί μικροφώνου όσο είναι ανοιχτό ένα άλλο πληκτρολόγιο. Πατήστε το για να υπαγορεύσετε με το Parakeetype· το κείμενο εισάγεται στο ενεργό πεδίο. Το Parakeetype χρησιμοποιεί αυτή την πρόσβαση μόνο για να εντοπίσει το ενεργό πεδίο κειμένου, να δει αν εμφανίζεται πληκτρολόγιο και να εισαγάγει το κείμενο. Η ομιλία επεξεργάζεται σε αυτή τη συσκευή και δεν αποστέλλεται τίποτα πουθενά.</string>
+    <string name="bubble_start_dictation">Έναρξη υπαγόρευσης</string>
+    <string name="bubble_model_loading">Φόρτωση του μοντέλου ομιλίας</string>
+    <string name="bubble_transcribing">Μεταγραφή</string>
+    <string name="bubble_copied">Δεν ήταν δυνατή η εισαγωγή του κειμένου, γι\' αυτό αντιγράφηκε στο πρόχειρο</string>
+    <string name="bubble_no_field">Πατήστε πρώτα ένα πεδίο κειμένου</string>
+    <string name="bubble_need_permission">Το Parakeetype χρειάζεται πρόσβαση στο μικρόφωνο</string>
+    <string name="home_bubble_enabled">Φυσαλίδα υπαγόρευσης ενεργή</string>
+    <string name="home_bubble_enabled_subtitle">Μια φυσαλίδα μικροφώνου εμφανίζεται ενώ πληκτρολογείτε με άλλο πληκτρολόγιο</string>
+    <string name="home_bubble_disabled">Φυσαλίδα υπαγόρευσης ανενεργή</string>
+    <string name="home_bubble_disabled_subtitle">Προαιρετικό: ενεργοποιήστε τη «Φυσαλίδα υπαγόρευσης Parakeetype» στην Προσβασιμότητα για να υπαγορεύετε με το συνηθισμένο πληκτρολόγιό σας. Αν ο διακόπτης είναι ανενεργός, επιτρέψτε πρώτα τις περιορισμένες ρυθμίσεις στις πληροφορίες εφαρμογής του Parakeetype.</string>
+    <string name="bubble_done">Έτοιμο, εισαγωγή κειμένου</string>
+    <string name="bubble_cancel">Ακύρωση υπαγόρευσης</string>
+</resources>
