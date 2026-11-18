@@ -28,9 +28,6 @@
     <!-- Content descriptions -->
     <string name="cd_back">Tagasi</string>
     <string name="cd_switch_keyboard">Vaheta klaviatuuri</string>
-    <string name="cd_undo_dictation">Võta viimane dikteerimine tagasi</string>
-    <string name="cd_redo_dictation">Tee viimane dikteerimine uuesti</string>
-    <string name="cd_reinsert_transcript">Sisesta viimane dikteerimine uuesti</string>
     <string name="cd_delete_all">Kustuta kogu tekst</string>
     <string name="cd_delete_word">Kustuta viimane sõna</string>
     <string name="cd_action_search">Otsi</string>
@@ -212,21 +209,4 @@
     <string name="voice_input_error_permission">Parakeetype vajab juurdepääsu mikrofonile.</string>
     <string name="voice_input_error_audio">Mikrofoni ei saanud avada.</string>
     <string name="voice_input_error_generic">Kõnetuvastus ebaõnnestus.</string>
-
-    <!-- Hõljuv dikteerimismull (juurdepääsuteenus) -->
-    <string name="bubble_service_label">Parakeetype dikteerimismull</string>
-    <string name="bubble_service_description">Kuvab hõljuva mikrofoninupu, kui mõni muu klaviatuur on avatud. Puudutage seda, et Parakeetype\'iga dikteerida; tekst lisatakse aktiivsele väljale. Parakeetype kasutab seda juurdepääsu ainult aktiivse tekstivälja leidmiseks, selle tuvastamiseks, kas klaviatuur on kuvatud, ja teksti sisestamiseks. Kõnet töödeldakse selles seadmes ja midagi ei saadeta kuhugi.</string>
-    <string name="bubble_start_dictation">Alusta dikteerimist</string>
-    <string name="bubble_stop_dictation">Peata dikteerimine</string>
-    <string name="bubble_model_loading">Kõnemudeli laadimine</string>
-    <string name="bubble_transcribing">Transkribeerimine</string>
-    <string name="bubble_copied">Teksti ei saanud lisada, seega kopeeriti see lõikelauale</string>
-    <string name="bubble_no_field">Puudutage esmalt tekstivälja</string>
-    <string name="bubble_need_permission">Parakeetype vajab juurdepääsu mikrofonile</string>
-    <string name="home_bubble_enabled">Dikteerimismull sees</string>
-    <string name="home_bubble_enabled_subtitle">Mikrofonimull ilmub, kui kirjutate muu klaviatuuriga</string>
-    <string name="home_bubble_disabled">Dikteerimismull väljas</string>
-    <string name="home_bubble_disabled_subtitle">Valikuline: lülitage Juurdepääsetavuse all sisse „Parakeetype dikteerimismull“, et dikteerida tavalise klaviatuuriga. Kui lüliti on tuhm, lubage esmalt Parakeetype\'i rakenduse teabes piiratud sätted.</string>
-    <string name="bubble_done">Valmis, lisa tekst</string>
-    <string name="bubble_cancel">Tühista dikteerimine</string>
 </resources>

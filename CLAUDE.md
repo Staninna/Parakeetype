@@ -42,3 +42,15 @@ signing keys.
 - **Commit identity:** the GitHub noreply address in the repo's local git config. Before committing,
   confirm `git config --local user.email` ends in `@users.noreply.github.com`.
 - **Small, focused changes** in the app's own style and architecture.
+
+## Fork additions
+
+`AGENTS.md` stays exactly as upstream has it; the fork's own code is described here. Keep fork
+code in fork-owned files and leave only one-line hooks in upstream files, so syncs stay clean.
+
+| Where | What |
+|---|---|
+| `bubble/` | Optional floating dictation bubble over other keyboards (accessibility service). `BubbleAccessibilityService` decides when to show it and runs a segmented `RecognitionSession`; `FieldFinder` finds the keyboard and the focused field (structure and focus only, never field text); `BubbleWindow` is the overlay window (docking, keyboard push-up, drag); `TranscriptInserter` inserts via `ACTION_SET_TEXT` with a clipboard + `ACTION_PASTE` fallback; `TextSplice` and `BubblePlacement` hold the pure logic (unit-tested); `BubbleSetupItem` is the home-screen row. |
+| `res/values*/strings_bubble.xml` | All fork strings, in all 25 locales. Never add fork strings to upstream's `strings.xml`. |
+| `ime/KeepScreenOn.kt` | Keeps the screen on while the keyboard dictates (hook in `ParakeetypeInputMethodService`). The voice-input sheet does the same in `VoiceInputActivity`. |
+| `RecognitionSession.Listener.onEndpointed`, `KeyboardViewModel.onEndOfSpeechDetected` | A `HapticFeedbackConstants.CONFIRM` tick when end-of-speech detection stops instant mode or the voice-input sheet on its own. |
