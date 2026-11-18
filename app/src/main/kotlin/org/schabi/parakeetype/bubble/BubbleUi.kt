@@ -1,5 +1,3 @@
-@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-
 package org.schabi.parakeetype.bubble
 
 import androidx.compose.animation.AnimatedContent
@@ -17,7 +15,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -50,6 +47,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -246,7 +244,7 @@ private fun RecordingDot() {
 @Composable
 private fun Waveform(state: BubbleUiState) {
     val color = MaterialTheme.colorScheme.inverseOnSurface
-    Canvas(Modifier.width(104.dp).size(width = 104.dp, height = 28.dp)) {
+    Canvas(Modifier.size(width = 104.dp, height = 28.dp)) {
         val count = state.levels.size
         val gap = 2.dp.toPx()
         val barWidth = (size.width - gap * (count - 1)) / count
@@ -268,7 +266,7 @@ private fun Waveform(state: BubbleUiState) {
 @Composable
 private fun PillButton(
     label: String,
-    background: androidx.compose.ui.graphics.Color,
+    background: Color,
     enabled: Boolean,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
@@ -281,7 +279,7 @@ private fun PillButton(
             .scale(scale)
             .clip(CircleShape)
             .background(background)
-            .combinedClickable(enabled = enabled, onClickLabel = label, onClick = onClick)
+            .clickable(enabled = enabled, onClickLabel = label, onClick = onClick)
             .semantics { contentDescription = label },
     ) { content() }
 }
