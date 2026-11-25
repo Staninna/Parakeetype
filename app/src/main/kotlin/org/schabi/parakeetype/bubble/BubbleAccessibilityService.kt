@@ -77,6 +77,7 @@ class BubbleAccessibilityService : AccessibilityService() {
     private lateinit var window: BubbleWindow
     private lateinit var inserter: TranscriptInserter
     private lateinit var inference: InferenceConnection
+    private lateinit var mediaPause: MediaPause
 
     private var session: RecognitionSession? = null
 
@@ -90,6 +91,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         finder = FieldFinder(this)
         inserter = TranscriptInserter(this)
         inference = InferenceConnection(this)
+        mediaPause = MediaPause(this)
         window = BubbleWindow(this, ui) {
             ParakeetypeKeyboardTheme {
                 BubbleContent(
@@ -129,6 +131,7 @@ class BubbleAccessibilityService : AccessibilityService() {
         session = null
         if (::window.isInitialized) window.destroy()
         if (::inference.isInitialized) inference.unbind()
+        if (::mediaPause.isInitialized) mediaPause.resume()
         scope.cancel()
         super.onDestroy()
     }
@@ -232,6 +235,8 @@ class BubbleAccessibilityService : AccessibilityService() {
         ui.phase = BubblePhase.Listening
         // Long dictations must not be cut off by the screen timeout locking the phone.
         window.view.keepScreenOn = true
+        // Music playing meanwhile would be transcribed along with the user.
+        mediaPause.pause()
         session = RecognitionSession(
             audioContext = this,
             inference = inference,
@@ -256,6 +261,7 @@ class BubbleAccessibilityService : AccessibilityService() {
 
     private fun endSession() {
         window.view.keepScreenOn = false
+        mediaPause.resume()
         session = null
         target = null
         ui.phase = BubblePhase.Idle
