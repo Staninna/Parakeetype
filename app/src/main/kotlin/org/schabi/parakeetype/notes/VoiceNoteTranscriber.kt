@@ -1,13 +1,36 @@
 package org.schabi.parakeetype.notes
 
+import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.schabi.parakeetype.audio.AudioChunk
+import org.schabi.parakeetype.audio.AudioFileDecoder
 import org.schabi.parakeetype.inference.SpeechEngine
 import org.schabi.parakeetype.inference.TextReplacements
 import org.schabi.parakeetype.inference.TranscriptResult
 import org.schabi.parakeetype.inference.cleanTranscript
 import org.schabi.parakeetype.inference.stripScriptHallucinations
 import org.schabi.parakeetype.inference.zeroPadToMinimum
+import org.schabi.parakeetype.settings.preferences.AppPreferences
 import java.io.IOException
+
+/**
+ * Decodes the voice note at [path] and transcribes it with the user's text settings. Received
+ * notes, the test screen ([VoiceNotesActivity]) and shared audio all go through here.
+ *
+ * @throws IOException when the file can't be decoded or the engine fails.
+ */
+internal suspend fun transcribeVoiceNoteFile(context: Context, engine: SpeechEngine, path: String): String {
+    val prefs = AppPreferences(context.applicationContext)
+    val postprocessing = prefs.postprocessingEnabled.first()
+    val formatNumbers = prefs.formatNumbersAsDigits.first()
+    val replacements = TextReplacements(prefs.textReplacements.first())
+    val audio = withContext(Dispatchers.IO) { AudioFileDecoder.decode(path) }
+    return withContext(Dispatchers.Default) {
+        VoiceNoteTranscriber(engine).transcribe(VoiceNoteAudio.prepare(audio), postprocessing, formatNumbers, replacements)
+    }
+}
 
 /** Silence before each piece: the TDT decoder misses a first word that starts at sample 0. */
 private const val LEAD_SILENCE_SAMPLES = MODEL_RATE * 6 / 10

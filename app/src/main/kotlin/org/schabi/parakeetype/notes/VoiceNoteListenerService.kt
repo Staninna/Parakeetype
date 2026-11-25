@@ -15,19 +15,24 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.schabi.parakeetype.R
 import org.schabi.parakeetype.audio.AudioFileDecoder
-import org.schabi.parakeetype.inference.TextReplacements
 import org.schabi.parakeetype.recognition.InferenceConnection
-import org.schabi.parakeetype.settings.preferences.AppPreferences
 import java.io.File
 import java.io.IOException
 
 private const val TAG = "VoiceNoteListener"
+
+/** WhatsApp's (or WhatsApp Business's) Voice Notes folder; it holds one subfolder per week. */
+internal fun messengerVoiceNotesFolder(packageName: String): File {
+    val app = if (packageName == "com.whatsapp.w4b") "WhatsApp Business" else "WhatsApp"
+    @Suppress("DEPRECATION") // All-files access reads the real path; MediaStore can't see these files.
+    val root = Environment.getExternalStorageDirectory()
+    return File(root, "Android/media/$packageName/$app/Media/$app Voice Notes")
+}
 
 private const val CHANNEL_ID = "voice_notes"
 
@@ -147,16 +152,8 @@ class VoiceNoteListenerService : NotificationListenerService() {
             }
         }
 
-        val prefs = AppPreferences(applicationContext)
-        val postprocessing = prefs.postprocessingEnabled.first()
-        val formatNumbers = prefs.formatNumbersAsDigits.first()
-        val replacements = TextReplacements(prefs.textReplacements.first())
         val text = try {
-            val audio = withContext(Dispatchers.IO) { AudioFileDecoder.decode(file.path) }
-            withContext(Dispatchers.Default) {
-                VoiceNoteTranscriber(repository.speechEngine)
-                    .transcribe(VoiceNoteAudio.prepare(audio), postprocessing, formatNumbers, replacements)
-            }
+            transcribeVoiceNoteFile(this, repository.speechEngine, file.path)
         } catch (e: IOException) {
             Log.w(TAG, "Transcribing the voice note failed: ${e.message}")
             notify(request, getString(R.string.voice_note_failed))
@@ -200,10 +197,7 @@ class VoiceNoteListenerService : NotificationListenerService() {
 
     private fun voiceNotesFolder(packageName: String): File {
         if (packageName == TEST_PACKAGE) return File(externalMediaDirs.first(), "Test Voice Notes")
-        val app = if (packageName == "com.whatsapp.w4b") "WhatsApp Business" else "WhatsApp"
-        @Suppress("DEPRECATION") // All-files access reads the real path; MediaStore can't see these files.
-        val root = Environment.getExternalStorageDirectory()
-        return File(root, "Android/media/$packageName/$app/Media/$app Voice Notes")
+        return messengerVoiceNotesFolder(packageName)
     }
 
     private fun notify(request: Request, text: String) {

@@ -135,6 +135,18 @@
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
         </service>
+        <!-- Tests voice note transcription on a recording or a saved WhatsApp voice note, and
+             transcribes audio shared to Parakeetype (e.g. a voice note from WhatsApp). -->
+        <activity
+                android:name=".notes.VoiceNotesActivity"
+                android:label="@string/voice_notes_share_label"
+                android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="audio/*"/>
+            </intent-filter>
+        </activity>
 
         <!-- Serves the crash report to the share sheet (CrashReporter.shareIntent). -->
         <provider

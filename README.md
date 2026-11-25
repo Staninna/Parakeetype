@@ -119,7 +119,7 @@ Parakeetype is structured as a clean layered pipeline. The `SpeechEngine` interf
 | `ui` | `KeyboardViewModel` | Bridges IME lifecycle, audio capture, and inference results into `KeyboardUiState`; owns `captureJob` |
 | `settings` | `ModelImporter` | Installs a model from the single ZIP archive the user picked (SAF); verifies every file's SHA-256 and swaps the model in atomically |
 | `settings` | `ModelStorageManager` | Manages model file paths inside `filesDir` (no external storage permission needed) |
-| `notes` | `VoiceNoteListenerService` | Optional: transcribes incoming WhatsApp voice notes. A notification listener spots the voice message, finds its file in WhatsApp's Voice Notes folder (all files access), decodes it with `AudioFileDecoder` and posts the text as a notification |
+| `notes` | `VoiceNoteListenerService` | Optional: transcribes incoming WhatsApp voice notes. A notification listener spots the voice message, finds its file in WhatsApp's Voice Notes folder (all files access), decodes it with `AudioFileDecoder` and posts the text as a notification. `VoiceNotesActivity` is a test screen (play and transcribe saved voice notes, record a test message) and transcribes audio shared to Parakeetype |
 
 ### Inference pipeline (Parakeet Ultra)
 

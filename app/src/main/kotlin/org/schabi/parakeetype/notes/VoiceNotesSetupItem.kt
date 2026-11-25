@@ -35,7 +35,8 @@ private enum class VoiceNotesState { Off, NeedsFileAccess, NeedsNotifications, O
 /**
  * The home screen's setup row for voice note transcription: off until Parakeetype has
  * notification access, then asks for all files access to read the notes and for permission to
- * post the transcriptions. Re-checked whenever the screen resumes; a tap opens the missing step.
+ * post the transcriptions. Re-checked whenever the screen resumes; a tap opens the missing step,
+ * or, once everything is set up, [VoiceNotesActivity] to test transcription.
  */
 @Composable
 internal fun VoiceNotesSetupItem(shape: Shape) {
@@ -76,7 +77,7 @@ internal fun VoiceNotesSetupItem(shape: Shape) {
         ),
         onClickLabel = stringResource(R.string.action_open_settings),
         onClick = when (state) {
-            VoiceNotesState.On -> null
+            VoiceNotesState.On -> { { context.startActivity(Intent(context, VoiceNotesActivity::class.java)) } }
             VoiceNotesState.NeedsFileAccess -> { { openFileAccessSettings(context) } }
             VoiceNotesState.NeedsNotifications -> {
                 {
