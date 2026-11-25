@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.schabi.parakeetype.R
 import org.schabi.parakeetype.audio.PermissionHelper
 import org.schabi.parakeetype.bubble.BubbleSetupItem
+import org.schabi.parakeetype.notes.VoiceNotesSetupItem
 import org.schabi.parakeetype.inference.InferenceService
 import org.schabi.parakeetype.settings.model.ModelRegistry
 import org.schabi.parakeetype.settings.model.ModelStorageManager
@@ -186,6 +187,8 @@ private fun HomeScreenContent(
                 },
                 // 5. Floating dictation bubble (fork) - optional, dictate while using another keyboard
                 { BubbleSetupItem(shape = it) },
+                // 6. Voice note transcription (fork) - optional, transcribes incoming WhatsApp voice notes
+                { VoiceNotesSetupItem(shape = it) },
             ),
         )
 

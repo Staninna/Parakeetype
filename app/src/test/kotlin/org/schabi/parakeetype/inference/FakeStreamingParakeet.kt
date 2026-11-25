@@ -59,17 +59,16 @@ class FakeStreamingParakeet(
         }
     }
 
-    /** Absolute sample position of the next chunk's first frame. Reset by [initialTdtState]. */
-    private var nextAbsSample = 0
-
     /** Number of [decodeChunk] calls - lets tests assert the chunk cadence. */
+    @Volatile
     var decodeCalls: Int = 0
         private set
 
-    override fun initialTdtState(): TdtState {
-        nextAbsSample = 0
-        return TdtState(FloatArray(2 * 640), FloatArray(2 * 640), 0)
-    }
+    // The absolute sample position of the next chunk's first frame rides in the carried
+    // state (lstmState1[0]), not in a field: like the real engine, the fake keeps no
+    // per-session state of its own, so concurrent sessions on one engine stay independent.
+    override fun initialTdtState(): TdtState =
+        TdtState(FloatArray(2 * 640), FloatArray(2 * 640), 0)
 
     override fun encodeBuffer(samples: FloatArray): Pair<OnnxTensor, Int> {
         // Same frame count as the real encoder: ceil((n/160 + 1)/8).
@@ -91,6 +90,7 @@ class FakeStreamingParakeet(
     ): ChunkDecodeResult {
         if (perChunkDecodeMs > 0) Thread.sleep(perChunkDecodeMs)
         decodeCalls++
+        var nextAbsSample = state.lstmState1[0].toInt()
 
         // The chunk's absolute sample range: [nextAbsSample, nextAbsSample + frames*1280).
         // The per-buffer 100 ms padding frame makes the upper bound a small over-estimate
@@ -112,7 +112,7 @@ class FakeStreamingParakeet(
         return ChunkDecodeResult(
             tokens = tokens,
             state = TdtState(
-                state.lstmState1.copyOf(),
+                state.lstmState1.copyOf().also { it[0] = nextAbsSample.toFloat() },
                 state.lstmState2.copyOf(),
                 tokens.lastOrNull() ?: 0,
                 frameDelta = 0,

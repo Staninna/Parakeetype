@@ -44,7 +44,7 @@ It uses [Parakeet Ultra](https://huggingface.co/moondream/parakeet-ultra), Moond
 | Android version | 12 (API 31)                                                            |
 | RAM | 4 GB recommended                                                       |
 | Free storage | ~750 MB (for ASR model files) |
-| Permissions | `RECORD_AUDIO`, `POST_NOTIFICATIONS` (no `INTERNET`) |
+| Permissions | `RECORD_AUDIO`, `POST_NOTIFICATIONS` (no `INTERNET`); optional for voice note transcription: notification access, all files access |
 
 > Parakeetype has **no network access**. You download the model archive once in your browser and import it into the app; the keyboard itself never goes online.
 
@@ -119,6 +119,7 @@ Parakeetype is structured as a clean layered pipeline. The `SpeechEngine` interf
 | `ui` | `KeyboardViewModel` | Bridges IME lifecycle, audio capture, and inference results into `KeyboardUiState`; owns `captureJob` |
 | `settings` | `ModelImporter` | Installs a model from the single ZIP archive the user picked (SAF); verifies every file's SHA-256 and swaps the model in atomically |
 | `settings` | `ModelStorageManager` | Manages model file paths inside `filesDir` (no external storage permission needed) |
+| `notes` | `VoiceNoteListenerService` | Optional: transcribes incoming WhatsApp voice notes. A notification listener spots the voice message, finds its file in WhatsApp's Voice Notes folder (all files access), decodes it with `AudioFileDecoder` and posts the text as a notification |
 
 ### Inference pipeline (Parakeet Ultra)
 
@@ -185,7 +186,9 @@ A debug build for sideloading:
 | `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_MICROPHONE` | Keeping the inference engine alive while the keyboard is in use |
 | `FOREGROUND_SERVICE_SPECIAL_USE` | *Keep model loaded* setting (on by default): keeps the model in RAM while another keyboard is active |
 | Accessibility service (`BIND_ACCESSIBILITY_SERVICE`, opt-in) | *Dictation bubble*: finding the focused text field, seeing whether a keyboard is open, drawing the bubble and inserting the transcript. Window content is not stored or transmitted |
-| `POST_NOTIFICATIONS` | Showing the required foreground service notification |
+| `POST_NOTIFICATIONS` | Showing the required foreground service notification, and voice note transcriptions |
+| Notification access (`BIND_NOTIFICATION_LISTENER_SERVICE`, opt-in) | *Voice note transcription*: noticing incoming WhatsApp voice messages. Android delivers every app's notifications to a listener; Parakeetype drops everything not from WhatsApp or WhatsApp Business before reading it |
+| All files access (`MANAGE_EXTERNAL_STORAGE`, opt-in) | *Voice note transcription*: reading the voice note from WhatsApp's Voice Notes folder, which WhatsApp hides from the normal audio permission. Nothing else is read and nothing is written |
 
 No permission is used for any purpose beyond what is listed above.
 
@@ -196,6 +199,7 @@ No permission is used for any purpose beyond what is listed above.
 - Audio stays on your device - all recognition runs locally via ONNX Runtime.
 - No analytics, crash-reporting services, or third-party SDKs are included.
 - If Parakeetype crashes, a crash log (only Parakeetype's own log lines, which may include dictated text) is saved on the device and you are offered to share it. It is never sent anywhere unless you share it yourself.
+- Voice note transcription is off until you grant notification access. Once on, Parakeetype sees every app's notifications, because that is how Android's notification access works. It ignores all but WhatsApp's, and its logs contain no names, messages or transcriptions. A transcription exists only in the notification it posts.
 - No accounts or sign-in of any kind.
 - No network access at all: the app has no `INTERNET` permission. The model archive is downloaded by you in your browser (or copied from a computer) and imported from local storage.
 

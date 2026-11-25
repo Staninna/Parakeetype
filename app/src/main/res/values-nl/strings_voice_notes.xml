@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork-only strings of voice note transcription (notes/), kept out of strings.xml so
+     upstream syncs never conflict on them. -->
+<resources>
+    <string name="voice_note_listener_label">Parakeetype-spraakberichten uitschrijven</string>
+    <string name="voice_note_channel_name">Uitgeschreven spraakberichten</string>
+    <string name="voice_note_channel_desc">De tekst van WhatsApp-spraakberichten die je ontvangt</string>
+    <string name="voice_note_title_group">%1$s in %2$s</string>
+    <string name="voice_note_unknown_sender">Spraakbericht</string>
+    <string name="voice_note_failed">Dit spraakbericht kon niet worden uitgeschreven. Open Parakeetype om het spraakmodel te controleren.</string>
+    <string name="voice_note_no_speech">Geen spraak gevonden in dit spraakbericht</string>
+    <string name="voice_note_no_file_access">Dit spraakbericht kon niet worden gelezen. Open Parakeetype en sta toegang tot alle bestanden toe.</string>
+    <string name="home_voice_notes_enabled">Spraakberichten uitschrijven aan</string>
+    <string name="home_voice_notes_enabled_subtitle">Voor WhatsApp-spraakberichten die je ontvangt krijg je een melding met de tekst</string>
+    <string name="home_voice_notes_disabled">Spraakberichten uitschrijven uit</string>
+    <string name="home_voice_notes_disabled_subtitle">Optioneel: geef Parakeetype toegang tot meldingen om WhatsApp-spraakberichten op dit apparaat uit te schrijven. Parakeetype negeert meldingen van andere apps. Is de schakelaar grijs, sta dan eerst beperkte instellingen toe in de app-info van Parakeetype.</string>
+    <string name="home_voice_notes_needs_access">Spraakberichten uitschrijven heeft bestandstoegang nodig</string>
+    <string name="home_voice_notes_needs_access_subtitle">Sta toegang tot alle bestanden toe zodat Parakeetype de map met WhatsApp-spraakberichten kan lezen</string>
+</resources>

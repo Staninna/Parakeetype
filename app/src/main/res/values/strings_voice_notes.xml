@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork-only strings of voice note transcription (notes/), kept out of strings.xml so
+     upstream syncs never conflict on them. English and Dutch only. -->
+<resources>
+    <string name="voice_note_listener_label">Parakeetype voice note transcription</string>
+    <string name="voice_note_channel_name">Voice note transcriptions</string>
+    <string name="voice_note_channel_desc">The text of WhatsApp voice notes you receive</string>
+    <string name="voice_note_title_group">%1$s in %2$s</string>
+    <string name="voice_note_unknown_sender">Voice note</string>
+    <string name="voice_note_failed">Couldn\'t transcribe this voice note. Open Parakeetype to check the speech model.</string>
+    <string name="voice_note_no_speech">No speech found in this voice note</string>
+    <string name="voice_note_no_file_access">Couldn\'t read this voice note. Open Parakeetype and allow all files access.</string>
+    <string name="home_voice_notes_enabled">Voice note transcription on</string>
+    <string name="home_voice_notes_enabled_subtitle">WhatsApp voice notes you receive get a notification with their text</string>
+    <string name="home_voice_notes_disabled">Voice note transcription off</string>
+    <string name="home_voice_notes_disabled_subtitle">Optional: give Parakeetype notification access to transcribe WhatsApp voice notes on this device. Parakeetype ignores notifications from other apps. If the switch is greyed out, allow restricted settings in Parakeetype\'s app info first.</string>
+    <string name="home_voice_notes_needs_access">Voice note transcription needs file access</string>
+    <string name="home_voice_notes_needs_access_subtitle">Allow all files access so Parakeetype can read WhatsApp\'s Voice Notes folder</string>
+</resources>
