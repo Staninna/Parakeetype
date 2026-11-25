@@ -16,4 +16,6 @@
     <string name="home_voice_notes_disabled_subtitle">Optional: give Parakeetype notification access to transcribe WhatsApp voice notes on this device. Parakeetype ignores notifications from other apps. If the switch is greyed out, allow restricted settings in Parakeetype\'s app info first.</string>
     <string name="home_voice_notes_needs_access">Voice note transcription needs file access</string>
     <string name="home_voice_notes_needs_access_subtitle">Allow all files access so Parakeetype can read WhatsApp\'s Voice Notes folder</string>
+    <string name="home_voice_notes_needs_notifications">Voice note transcription can\'t show its text</string>
+    <string name="home_voice_notes_needs_notifications_subtitle">Allow Parakeetype to send notifications. Transcriptions appear as notifications.</string>
 </resources>

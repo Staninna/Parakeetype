@@ -16,4 +16,6 @@
     <string name="home_voice_notes_disabled_subtitle">Optioneel: geef Parakeetype toegang tot meldingen om WhatsApp-spraakberichten op dit apparaat uit te schrijven. Parakeetype negeert meldingen van andere apps. Is de schakelaar grijs, sta dan eerst beperkte instellingen toe in de app-info van Parakeetype.</string>
     <string name="home_voice_notes_needs_access">Spraakberichten uitschrijven heeft bestandstoegang nodig</string>
     <string name="home_voice_notes_needs_access_subtitle">Sta toegang tot alle bestanden toe zodat Parakeetype de map met WhatsApp-spraakberichten kan lezen</string>
+    <string name="home_voice_notes_needs_notifications">Spraakberichten uitschrijven kan de tekst niet tonen</string>
+    <string name="home_voice_notes_needs_notifications_subtitle">Sta meldingen van Parakeetype toe. De uitgeschreven tekst verschijnt als melding.</string>
 </resources>

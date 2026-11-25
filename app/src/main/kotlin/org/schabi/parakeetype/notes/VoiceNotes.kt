@@ -5,6 +5,12 @@ import kotlin.math.abs
 /** The messengers whose voice notes are transcribed: WhatsApp and WhatsApp Business. */
 val VOICE_NOTE_PACKAGES = setOf("com.whatsapp", "com.whatsapp.w4b")
 
+/**
+ * Test voice notes: notifications only adb can post (`cmd notification post`), with the file in
+ * Parakeetype's own media folder. `devtools/voice-note-test.sh` drives the whole flow this way.
+ */
+const val TEST_PACKAGE = "com.android.shell"
+
 /** WhatsApp starts the preview of a voice message with this emoji ("🎤 Voice message (0:19)"). */
 private const val MICROPHONE = "🎤"
 

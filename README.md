@@ -187,7 +187,7 @@ A debug build for sideloading:
 | `FOREGROUND_SERVICE_SPECIAL_USE` | *Keep model loaded* setting (on by default): keeps the model in RAM while another keyboard is active |
 | Accessibility service (`BIND_ACCESSIBILITY_SERVICE`, opt-in) | *Dictation bubble*: finding the focused text field, seeing whether a keyboard is open, drawing the bubble and inserting the transcript. Window content is not stored or transmitted |
 | `POST_NOTIFICATIONS` | Showing the required foreground service notification, and voice note transcriptions |
-| Notification access (`BIND_NOTIFICATION_LISTENER_SERVICE`, opt-in) | *Voice note transcription*: noticing incoming WhatsApp voice messages. Android delivers every app's notifications to a listener; Parakeetype drops everything not from WhatsApp or WhatsApp Business before reading it |
+| Notification access (`BIND_NOTIFICATION_LISTENER_SERVICE`, opt-in) | *Voice note transcription*: noticing incoming WhatsApp voice messages. Android delivers every app's notifications to a listener; Parakeetype drops everything not from WhatsApp or WhatsApp Business (or test notes posted over adb) before reading it |
 | All files access (`MANAGE_EXTERNAL_STORAGE`, opt-in) | *Voice note transcription*: reading the voice note from WhatsApp's Voice Notes folder, which WhatsApp hides from the normal audio permission. Nothing else is read and nothing is written |
 
 No permission is used for any purpose beyond what is listed above.

@@ -21,15 +21,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.schabi.parakeetype.R
 import org.schabi.parakeetype.audio.AudioFileDecoder
-import org.schabi.parakeetype.audio.ClientAudioReader
-import org.schabi.parakeetype.audio.PcmFormat
-import org.schabi.parakeetype.audio.VadFilter
 import org.schabi.parakeetype.inference.TextReplacements
-import org.schabi.parakeetype.inference.TranscriptResult
 import org.schabi.parakeetype.recognition.InferenceConnection
-import org.schabi.parakeetype.recognition.TranscriptAccumulator
 import org.schabi.parakeetype.settings.preferences.AppPreferences
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 
@@ -90,7 +84,7 @@ class VoiceNoteListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (sbn.packageName !in VOICE_NOTE_PACKAGES) return
+        if (sbn.packageName !in VOICE_NOTE_PACKAGES && sbn.packageName != TEST_PACKAGE) return
         val style = NotificationCompat.MessagingStyle
             .extractMessagingStyleFromNotification(sbn.notification) ?: return
         val messages = style.messages.map {
@@ -130,6 +124,11 @@ class VoiceNoteListenerService : NotificationListenerService() {
     }
 
     private suspend fun handle(request: Request) {
+        if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+            // Nowhere to show the text; the home screen row asks to allow notifications.
+            Log.w(TAG, "Notifications are off: skipped a voice note")
+            return
+        }
         if (!Environment.isExternalStorageManager()) {
             Log.w(TAG, "No all-files access: can't read voice notes")
             notify(request, getString(R.string.voice_note_no_file_access))
@@ -148,35 +147,21 @@ class VoiceNoteListenerService : NotificationListenerService() {
             }
         }
 
-        val pcm = try {
-            withContext(Dispatchers.IO) { AudioFileDecoder.decodeToPipelinePcm(file.path) }
+        val prefs = AppPreferences(applicationContext)
+        val postprocessing = prefs.postprocessingEnabled.first()
+        val formatNumbers = prefs.formatNumbersAsDigits.first()
+        val replacements = TextReplacements(prefs.textReplacements.first())
+        val text = try {
+            val audio = withContext(Dispatchers.IO) { AudioFileDecoder.decode(file.path) }
+            withContext(Dispatchers.Default) {
+                VoiceNoteTranscriber(repository.speechEngine)
+                    .transcribe(VoiceNoteAudio.prepare(audio), postprocessing, formatNumbers, replacements)
+            }
         } catch (e: IOException) {
-            Log.w(TAG, "Decoding the voice note failed: ${e.message}")
+            Log.w(TAG, "Transcribing the voice note failed: ${e.message}")
             notify(request, getString(R.string.voice_note_failed))
             return
         }
-
-        val prefs = AppPreferences(applicationContext)
-        val reader = ClientAudioReader(
-            input = ByteArrayInputStream(pcm),
-            format = PcmFormat(),
-            loadVad = { VadFilter.load(this) },
-        )
-        val transcript = TranscriptAccumulator()
-        repository.transcribe(
-            audio = reader.read(),
-            postprocessingEnabled = prefs.postprocessingEnabled.first(),
-            formatNumbersAsDigits = prefs.formatNumbersAsDigits.first(),
-            replacements = TextReplacements(prefs.textReplacements.first()),
-        ).collect { item ->
-            when (item) {
-                is TranscriptResult.Partial -> transcript.onPartial(item.text)
-                is TranscriptResult.Final -> transcript.onFinal(item.text, item.confidence)
-                is TranscriptResult.WindowTrimmed -> transcript.onWindowTrimmed()
-                is TranscriptResult.Failure, TranscriptResult.NoSpeech -> Unit
-            }
-        }
-        val text = transcript.text
         Log.d(TAG, "Transcribed a voice note: ${text.length} characters")
         notify(request, text.ifBlank { getString(R.string.voice_note_no_speech) })
     }
@@ -214,6 +199,7 @@ class VoiceNoteListenerService : NotificationListenerService() {
     }
 
     private fun voiceNotesFolder(packageName: String): File {
+        if (packageName == TEST_PACKAGE) return File(externalMediaDirs.first(), "Test Voice Notes")
         val app = if (packageName == "com.whatsapp.w4b") "WhatsApp Business" else "WhatsApp"
         @Suppress("DEPRECATION") // All-files access reads the real path; MediaStore can't see these files.
         val root = Environment.getExternalStorageDirectory()
@@ -222,7 +208,6 @@ class VoiceNoteListenerService : NotificationListenerService() {
 
     private fun notify(request: Request, text: String) {
         val manager = NotificationManagerCompat.from(this)
-        if (!manager.areNotificationsEnabled()) return
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(request.title)

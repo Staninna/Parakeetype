@@ -1273,6 +1273,9 @@ class InferenceRepository(
      */
     fun setLanguage(tag: String) = engine.setLanguage(tag)
 
+    /** The wrapped engine, for one-shot transcription of whole recordings (fork: notes/). */
+    val speechEngine: SpeechEngine get() = engine
+
     /**
      * Forwards a language constraint set to the underlying engine.
      * No-op for engines that do not support language selection (Parakeet, Voxtral).

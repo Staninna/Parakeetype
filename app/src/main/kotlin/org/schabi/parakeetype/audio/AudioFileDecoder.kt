@@ -4,7 +4,9 @@ import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import org.schabi.parakeetype.notes.DecodedAudio
 import java.io.IOException
+import java.nio.ByteOrder
 
 private const val DEQUEUE_TIMEOUT_US = 10_000L
 
@@ -29,13 +31,12 @@ object AudioFileDecoder {
     }
 
     /**
-     * Decodes the first audio track of [path] into the pipeline's format: 16-bit little-endian
-     * mono PCM at [PIPELINE_SAMPLE_RATE], ready for a [ClientAudioReader] with the default
-     * [PcmFormat].
+     * Decodes the first audio track of [path] to mono floats at the decoder's own sample rate
+     * (48 kHz for Opus); resampling is left to the caller.
      *
      * @throws IOException if the file can't be read or has no decodable audio track.
      */
-    fun decodeToPipelinePcm(path: String): ByteArray {
+    fun decode(path: String): DecodedAudio {
         val extractor = MediaExtractor()
         var codec: MediaCodec? = null
         try {
@@ -52,8 +53,7 @@ object AudioFileDecoder {
             codec.configure(inputFormat, null, null, 0)
             codec.start()
 
-            val samples = mutableListOf<ShortArray>()
-            var converter: PcmConverter? = null
+            val out = FloatList()
             val info = MediaCodec.BufferInfo()
             var inputDone = false
             var outputDone = false
@@ -73,28 +73,16 @@ object AudioFileDecoder {
                     }
                 }
                 val index = codec.dequeueOutputBuffer(info, DEQUEUE_TIMEOUT_US)
-                if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    converter = PcmConverter(pcmFormat(codec.outputFormat))
-                } else if (index >= 0) {
+                if (index >= 0) {
                     val buffer = codec.getOutputBuffer(index) ?: throw IOException("no output buffer")
-                    val bytes = ByteArray(info.size)
                     buffer.position(info.offset)
-                    buffer.get(bytes)
+                    buffer.limit(info.offset + info.size)
+                    appendMono(buffer.order(ByteOrder.LITTLE_ENDIAN), codec.outputFormat, out)
                     codec.releaseOutputBuffer(index, false)
-                    val active = converter ?: PcmConverter(pcmFormat(codec.outputFormat)).also { converter = it }
-                    samples += active.convert(bytes)
                     if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) outputDone = true
                 }
             }
-            converter?.let { samples += it.finish() }
-
-            val all = ShortArray(samples.sumOf { it.size })
-            var offset = 0
-            for (part in samples) {
-                part.copyInto(all, offset)
-                offset += part.size
-            }
-            return all.toPcm16Bytes()
+            return DecodedAudio(out.toArray(), codec.outputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE))
         } catch (e: IllegalStateException) {
             // MediaCodec.CodecException and other codec state errors.
             throw IOException("decoding failed", e)
@@ -104,22 +92,48 @@ object AudioFileDecoder {
         }
     }
 
+    /** Appends the interleaved frames in [buffer] to [out], channels averaged. */
+    private fun appendMono(buffer: java.nio.ByteBuffer, format: MediaFormat, out: FloatList) {
+        val channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+        val encoding = if (format.containsKey(MediaFormat.KEY_PCM_ENCODING)) {
+            format.getInteger(MediaFormat.KEY_PCM_ENCODING)
+        } else {
+            AudioFormat.ENCODING_PCM_16BIT
+        }
+        when (encoding) {
+            AudioFormat.ENCODING_PCM_16BIT -> {
+                val shorts = buffer.asShortBuffer()
+                while (shorts.remaining() >= channels) {
+                    var sum = 0f
+                    repeat(channels) { sum += shorts.get() / 32_768f }
+                    out.add(sum / channels)
+                }
+            }
+            AudioFormat.ENCODING_PCM_FLOAT -> {
+                val floats = buffer.asFloatBuffer()
+                while (floats.remaining() >= channels) {
+                    var sum = 0f
+                    repeat(channels) { sum += floats.get() }
+                    out.add(sum / channels)
+                }
+            }
+            else -> throw IOException("unsupported decoder output encoding $encoding")
+        }
+    }
+
     private fun audioTrack(extractor: MediaExtractor): Int? =
         (0 until extractor.trackCount).firstOrNull { track ->
             extractor.getTrackFormat(track).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
         }
 
-    private fun pcmFormat(format: MediaFormat): PcmFormat {
-        val pcm = PcmFormat(
-            encoding = if (format.containsKey(MediaFormat.KEY_PCM_ENCODING)) {
-                format.getInteger(MediaFormat.KEY_PCM_ENCODING)
-            } else {
-                AudioFormat.ENCODING_PCM_16BIT
-            },
-            channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT),
-            sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE),
-        )
-        if (!pcm.isSupported) throw IOException("unsupported decoder output: $pcm")
-        return pcm
+    /** A growable float array; a voice note has millions of samples, too many to box. */
+    private class FloatList {
+        private var data = FloatArray(1 shl 16)
+        private var size = 0
+        fun add(value: Float) {
+            if (size == data.size) data = data.copyOf(size * 2)
+            data[size++] = value
+        }
+        fun toArray(): FloatArray = data.copyOf(size)
     }
 }
