@@ -15,8 +15,9 @@ private const val MAX_ENTRIES = 50
  * What [VoiceNoteListenerService] has already handled, kept across process death so a
  * re-posted notification never transcribes a voice note twice.
  *
- * A plain SharedPreferences file, not the settings DataStore: backups only include
- * `datastore/`, and this bookkeeping shouldn't move to another phone.
+ * A plain SharedPreferences file, not the settings DataStore: the backup rules
+ * (`fork_data_extraction_rules.xml`) leave it out, as this bookkeeping shouldn't move to
+ * another phone.
  */
 class VoiceNoteStore(context: Context) {
 

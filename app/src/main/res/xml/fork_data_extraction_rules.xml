@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Fork: backup and device-transfer rules (API 31+), replacing upstream's
+   data_extraction_rules.xml, which backs up only datastore/.
+   Seedvault reports itself as a device transfer, so it reads <device-transfer>.
+
+   Everything is backed up except:
+   - models/: imported speech models, hundreds of MB to several GB. A Seedvault app backup
+     over 3 GiB is dropped whole, settings included. The user imports the models again.
+   - crash/: crash reports for this phone; they may contain dictated text.
+   - voice_notes.xml: which WhatsApp voice notes this phone already transcribed.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="models/"/>
+        <exclude domain="file" path="crash/"/>
+        <exclude domain="sharedpref" path="voice_notes.xml"/>
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="models/"/>
+        <exclude domain="file" path="crash/"/>
+        <exclude domain="sharedpref" path="voice_notes.xml"/>
+    </device-transfer>
+</data-extraction-rules>
