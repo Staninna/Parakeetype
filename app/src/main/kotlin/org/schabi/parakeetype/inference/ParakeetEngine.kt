@@ -219,7 +219,12 @@ data class ChunkDecodeResult(
  *  4. greedy TDT     →  token IDs via decoder + joiner with LSTM state carry-over
  *  5. detokenise     →  string via vocab.txt
  */
-class ParakeetEngine : SpeechEngine, ChunkStreamingEngine {
+class ParakeetEngine(
+    /** Intra-op threads of the encoder and preprocessor, the bulk of the work. */
+    private val encoderThreads: Int = EngineThreads.encoderThreads(),
+    /** Graph optimisations; `ALL_OPT` fuses the int8 encoder's quantised MatMuls. */
+    private val optLevel: OrtSession.SessionOptions.OptLevel = OrtSession.SessionOptions.OptLevel.ALL_OPT,
+) : SpeechEngine, ChunkStreamingEngine {
 
     private var env: OrtEnvironment? = null
     private var prepSession: OrtSession? = null
@@ -267,6 +272,12 @@ class ParakeetEngine : SpeechEngine, ChunkStreamingEngine {
     }
 
 
+    private fun sessionOptions(threads: Int) = OrtSession.SessionOptions().apply {
+        setIntraOpNumThreads(threads)
+        setExecutionMode(OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL)
+        setOptimizationLevel(optLevel)
+    }
+
     /**
      * Creates all ONNX sessions and loads the vocabulary.
      * **Must be called on a background thread** - loading takes 1-3 s on first run.
@@ -282,11 +293,12 @@ class ParakeetEngine : SpeechEngine, ChunkStreamingEngine {
 
         check(!isLoaded) { "Already loaded; call close() before reloading" }
 
-        val opts = OrtSession.SessionOptions().apply {
-            setIntraOpNumThreads(2)
-            setExecutionMode(OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL)
-            setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
-        }
+        // The encoder runs once per chunk and dominates the decode time: it gets the
+        // performance cores. The decoder and joiner run once per emitted token on tiny
+        // tensors, where thread hand-offs cost more than they save: one thread each.
+        val opts = sessionOptions(encoderThreads)
+        val tokenOpts = sessionOptions(1)
+        Log.i(TAG, "ONNX sessions: encoder threads=$encoderThreads, optimisation=$optLevel")
 
         env = OrtEnvironment.getEnvironment()
         val e = env!!
@@ -301,9 +313,9 @@ class ParakeetEngine : SpeechEngine, ChunkStreamingEngine {
 
         encSession = e.createSession(File(modelDir, Files.ENCODER).absolutePath, opts)
         logSession("encoder", encSession!!)
-        decSession = e.createSession(File(modelDir, Files.DECODER).absolutePath, opts)
+        decSession = e.createSession(File(modelDir, Files.DECODER).absolutePath, tokenOpts)
         logSession("decoder", decSession!!)
-        joinSession = e.createSession(File(modelDir, Files.JOINER).absolutePath, opts)
+        joinSession = e.createSession(File(modelDir, Files.JOINER).absolutePath, tokenOpts)
         logSession("joiner", joinSession!!)
 
         // vocab.txt format: "<token_text> <id>" (e.g. "▁like 2656").
@@ -331,6 +343,7 @@ class ParakeetEngine : SpeechEngine, ChunkStreamingEngine {
         Log.d(TAG, "Joint output dim: $jointDim  numDurations: $numDurations")
 
         opts.close()
+        tokenOpts.close()
         isLoaded = true
         Log.d(TAG, "ParakeetEngine ready (modelDir=${modelDir.path})")
         val elapsed = System.currentTimeMillis() - startTime
